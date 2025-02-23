@@ -293,7 +293,7 @@ const Play = () => {
                   Gợi ý phim
                 </span>
               </div>
-              <div className="flex items-center  mt-5">
+              <div className="flex items-center justify-between mt-5 w-[95%]">
                 {/* Nút Trái */}
                 <div
                   className={`text-2xl cursor-pointer hover:text-gray-400 ${
@@ -306,11 +306,11 @@ const Play = () => {
                   <FaAngleLeft />
                 </div>
                 {/* Danh sách phim */}
-                <div className="flex gap-4 justify-around">
+                <div className="flex gap-4 justify-around    w-[90%]">
                   {displayedItems.map((item) => (
                     <div
                       key={item.id}
-                      className="  group w-[calc(96%/6-12px)] overflow-visible cursor-pointer mb-10"
+                      className="  group w-[calc(99%/6-12px)] overflow-visible cursor-pointer mb-10"
                     >
                       {/* Thumbnail */}
                       <div className="h-[200px] rounded-md relative group ">
@@ -318,7 +318,7 @@ const Play = () => {
                           <span className="font-Vip text-white">Free</span>
                         </div>
                         <img
-                          src={item.img}
+                          src={naruto}
                           alt={item.name}
                           className="w-full h-full object-cover transition rounded-md duration-300 transform group-hover:scale-105"
                         />
