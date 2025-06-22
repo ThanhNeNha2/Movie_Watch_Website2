@@ -279,7 +279,7 @@ const Play = () => {
                   tư chất bình phàm bước vào con đường tu chân, trải qua bao
                   phong ba bão táp, dựa vào trí tuệ sáng suốt, từng bước một
                   bước lên đỉnh cao, dựa vào sức một người, danh chấn Tu chân
-                  giới.
+                  giới..
                 </span>
               </div>
             </div>
