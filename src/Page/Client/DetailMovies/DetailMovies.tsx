@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
-import Header from "../../../Components/Client/Header/Header";
-import TienNghich from "../../../../public/Slider/454973789_1043086304140741_634917588460075684_n.jpg";
-import anhbia from "../../../../public/content/anhbiacontent.jpg";
+import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
-import { FaChevronLeft, FaChevronRight, FaPlay } from "react-icons/fa6";
+import { FaPlay } from "react-icons/fa";
 import {
   MdBookmarkAdded,
   MdOutlineIosShare,
@@ -11,217 +11,216 @@ import {
 } from "react-icons/md";
 import { RiArrowDownBoxLine, RiVipCrown2Fill } from "react-icons/ri";
 import { Link } from "react-router-dom";
-import { arrNewMovieUpdatedSeries } from "../../../Util/apiFake";
-const DetailMovies = () => {
+import Header from "../../../Components/Client/Header/Header";
+
+// Define interfaces for the API response
+interface Category {
+  id?: string;
+  name: string;
+  slug?: string;
+}
+
+interface Country {
+  id?: string;
+  name: string;
+  slug?: string;
+}
+
+interface Movie {
+  _id?: string;
+  name: string;
+  slug: string;
+  origin_name?: string;
+  content?: string;
+  year?: number;
+  category?: Category[];
+  country?: Country[];
+  vote_average?: number;
+  poster_url?: string;
+  thumb_url?: string;
+  sub_docquyen?: boolean;
+  time?: string;
+  episode_total?: string;
+  actor?: string[];
+  director?: string[];
+  status?: string;
+  quality?: string;
+  lang?: string;
+}
+
+// API response structure
+interface ApiResponse {
+  pageProps: {
+    data: {
+      item: Movie;
+    };
+  };
+}
+
+const DetailMovies: React.FC = () => {
+  const { movieName } = useParams<{ movieName: string }>();
+
   useEffect(() => {
-    window.scrollTo(0, 0); // Cuộn lên đầu khi component mount
+    window.scrollTo(0, 0); // Scroll to top when component mounts
   }, []);
+
+  // Fetch movie data from API
+  const fetchMovie = async (): Promise<Movie> => {
+    const response = await axios.get<ApiResponse>(
+      `http://localhost:8080/api/movie/${movieName}`
+    );
+    console.log("API Response:", response.data); // Log API response for debugging
+    return response.data.pageProps.data.item; // Extract the movie item
+  };
+
+  const {
+    data: movie,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["movie", movieName],
+    queryFn: fetchMovie,
+    enabled: !!movieName, // Only fetch when movieName exists
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <span className="text-white ml-3 text-lg font-medium">Đang tải...</span>
+      </div>
+    );
+  }
+
+  if (error || !movie) {
+    return (
+      <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-6 text-red-200 mx-4">
+        <div className="flex items-center">
+          <div className="text-red-400 mr-3 text-xl">⚠️</div>
+          <div>
+            <h3 className="font-semibold text-lg">Không tìm thấy phim</h3>
+            <p className="text-red-300 mt-1">
+              {error
+                ? `Lỗi: ${(error as Error).message}`
+                : "Phim không tồn tại."}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  console.log(" check ", movie);
+  const IMAGE_BASE_URL = "https://img.ophim.live/uploads/movies/";
+
+  const resolveImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith("http")) return url;
+    return IMAGE_BASE_URL + url;
+  };
+
+  // Map API data to component
+  const movieTitle = movie.name || movie.origin_name || "Không có tiêu đề";
+  const movieYear = movie.year || "N/A";
+  const movieDescription = movie.content || "Chưa có mô tả cho phim này.";
+  const movieCategories = movie.category || [];
+  const movieVoteAverage = movie.vote_average || 0;
+  const moviePosterUrl = movie?.pageProps?.data?.seoOnPage?.image
+    ? movie.pageProps.data.seoOnPage.image
+    : movie.poster_url
+    ? resolveImageUrl(movie.poster_url)
+    : movie.thumb_url
+    ? resolveImageUrl(movie.thumb_url)
+    : "/fallback-image.jpg";
+  const movieSubDocquyen = movie.sub_docquyen || false;
+  const movieTime = movie.time || movie.episode_total || "N/A";
 
   return (
     <div className="" style={{ background: "rgb(17, 19, 25)" }}>
       <Header />
       <div className="flex pl-12 relative">
-        <div className="flex-1 " style={{ background: "rgb(17, 19, 25)" }}>
-          {" "}
-        </div>
+        <div className="flex-1" style={{ background: "rgb(17, 19, 25)" }}></div>
         <div
-          className=" flex-[3] transition-all duration-1000 ease-in-out   "
+          className="flex-[3] transition-all duration-1000 ease-in-out"
           style={{
             backgroundImage: `
-            linear-gradient(to right, rgb(17, 19, 25) 35%, rgba(17, 19, 25, 0.6) 40%, transparent 100%), 
-            linear-gradient(to top, rgb(17, 19, 25) 10%, rgba(17, 19, 25, 0.6) 15%, transparent 30%), 
-            url('/Slider/454973789_1043086304140741_634917588460075684_n.jpg')
-          `,
+              linear-gradient(to right, rgb(17, 19, 25) 35%, rgba(17, 19, 25, 0.6) 40%, transparent 100%), 
+              linear-gradient(to top, rgb(17, 19, 25) 10%, rgba(17, 19, 25, 0.6) 15%, transparent 30%), 
+              url('${moviePosterUrl}')
+            `,
             backgroundSize: "cover",
             backgroundAttachment: "fixed",
-            // backgroundPosition: "center",
             height: "561px",
           }}
         ></div>
 
         <div className="absolute top-[70px]">
           <div className="text-white flex flex-col gap-3">
-            <span className="font-Bricolage font-semibold text-[40px] ">
-              Tiên Nghịch
+            <span className="font-Bricolage font-semibold text-[40px]">
+              {movieTitle}
             </span>
-            <button className="bg-green-400 w-14   flex justify-center items-center rounded">
-              Free
+            <button
+              className={`w-14 flex justify-center items-center rounded ${
+                movieSubDocquyen ? "bg-yellow-400" : "bg-green-400"
+              }`}
+            >
+              {movieSubDocquyen ? "Premium" : "Free"}
             </button>
-            <div className="flex gap-2 items-center   ">
-              <div className="flex items-center text-green-400 ">
-                {" "}
-                <MdOutlineStar /> <span className="text-green-400">9.4</span>
+            <div className="flex gap-2 items-center">
+              <div className="flex items-center text-green-400">
+                <MdOutlineStar />
+                <span className="text-green-400">
+                  {movieVoteAverage.toFixed(1) || "N/A"}
+                </span>
               </div>
               <div className="border h-3"></div>
               <span className="text-white text-sm">T13</span>
               <div className="border h-3"></div>
-              <span className="text-white text-sm">2021</span>
+              <span className="text-white text-sm">{movieYear}</span>
             </div>
             <div>
               <ul className="flex gap-3 items-center">
-                <li className=" rounded-sm px-2 bg-gray-500 text-white py-[3px] text-xs">
-                  Cổ trang{" "}
-                </li>
-                <li className=" rounded-sm px-2 bg-gray-500 text-white py-[3px] text-xs">
-                  Tiên Hiệp
-                </li>
-                <li className=" rounded-sm px-2 bg-gray-500 text-white py-[3px] text-xs">
-                  Tu Tiên
-                </li>
+                {movieCategories.map((cat, index) => (
+                  <li
+                    key={cat.id || index}
+                    className="rounded-sm px-2 bg-gray-500 text-white py-[3px] text-xs"
+                  >
+                    {cat.name}
+                  </li>
+                ))}
               </ul>
             </div>
-
-            {/*  */}
 
             <div>
               <button
                 className="flex gap-1 items-center px-4 py-[7px] rounded font-Vip font-semibold text-black"
                 style={{ background: "rgb(242, 191, 131)" }}
               >
-                {" "}
                 <RiVipCrown2Fill />
                 Tháng đầu chỉ với 23,000Đ
               </button>
             </div>
             <div className="w-[40vw]">
-              <span> Description:</span>
-              <span>
-                “Tiên Nghịch” của tác giả Nhĩ Căn, kể về thiếu niên bình phàm
-                Vương Lâm xuất thân nông thôn, mang theo nhiệt huyết, tu luyện
-                nghịch tiên, không chỉ cầu trường sinh, mà còn muốn thoát khỏi
-                thân phận giun dế. Hắn tin rằng đạo do người quyết định, dùng tư
-                chất bình phàm bước vào con đường tu chân, trải qua bao phong ba
-                bão táp, dựa vào trí tuệ sáng suốt, từng bước một bước lên đỉnh
-                cao, dựa vào sức một người, danh chấn Tu chân giới.
-              </span>
+              <span>Description:</span>
+              <span>{movieDescription}</span>
             </div>
 
-            {/*  */}
             <div className="flex gap-3">
-              <Link to={"/play"}>
-                <button className="py-1 px-4 bg-green-500 font-Vip  text-lg text-white hover:bg-green-400 cursor-pointer flex items-center gap-2 rounded">
+              <Link to={`/play/${movie.slug}`}>
+                <button className="py-1 px-4 bg-green-500 font-Vip text-lg text-white hover:bg-green-400 cursor-pointer flex items-center gap-2 rounded">
                   <FaPlay /> Play
                 </button>
               </Link>
-              <button className="py-1 px-4 bg-gray-700 font-Vip  text-lg text-white hover:text-green-400 cursor-pointer flex items-center gap-2 rounded">
+              <button className="py-1 px-4 bg-gray-700 font-Vip text-lg text-white hover:text-green-400 cursor-pointer flex items-center gap-2 rounded">
                 <MdOutlineIosShare /> Share
               </button>
-              <button className="py-1 px-4 bg-gray-700 font-Vip  text-lg text-white hover:text-green-400 cursor-pointer flex items-center gap-2 rounded">
+              <button className="py-1 px-4 bg-gray-700 font-Vip text-lg text-white hover:text-green-400 cursor-pointer flex items-center gap-2 rounded">
                 <RiArrowDownBoxLine /> App
               </button>
-              <button className="py-1 px-4 bg-gray-700 font-Vip  text-lg text-white hover:text-green-400 cursor-pointer flex items-center gap-2 rounded">
+              <button className="py-1 px-4 bg-gray-700 font-Vip text-lg text-white hover:text-green-400 cursor-pointer flex items-center gap-2 rounded">
                 <MdBookmarkAdded /> Watch Later
               </button>
             </div>
           </div>
-        </div>
-      </div>
-      <div
-        className=" px-12 h-auto flex flex-col gap-5 mt-5"
-        style={{ background: "rgb(17, 19, 25)" }}
-      >
-        <div className="flex justify-between">
-          {" "}
-          <span className=" font-Bricolage font-semibold text-[25px] text-white  ">
-            {" "}
-            Phim Đề Cử
-          </span>
-          <span className="text-white hover:text-green-400 cursor-pointer">
-            Xem tất cả
-          </span>
-        </div>
-        <div className="flex flex-wrap justify-between  mt-5  ">
-          {arrNewMovieUpdatedSeries.map((item, i) => (
-            <div
-              key={i}
-              className="relative group w-[calc(100%/6-12px)] overflow-visible cursor-pointer mb-10"
-            >
-              <Link to={"/detailmovies"} className="block h-full">
-                {/* Thumbnail */}
-                <div className="h-[281px] rounded-md relative">
-                  <div className="absolute bg-green-400 right-0 px-3 overflow-hidden rounded">
-                    <span className="font-Vip text-white">Free</span>
-                  </div>
-                  <img
-                    src={item.thumb_url}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {/* Tên phim */}
-                <span className="text-white group-hover:text-green-400">
-                  {item.name}
-                </span>
-
-                {/* Nội dung hiển thị khi hover */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-5  bg-gray-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50 shadow-lg rounded-md">
-                  {/* Phim 1  */}
-                  <div className=" w-[285px] h-[350px] flex flex-col  overflow-hidden rounded group cursor-pointer ">
-                    {/* img */}
-                    <div className="  flex-[2] rounded-md relative overflow-hidden">
-                      <div className="absolute bg-green-400 right-0 px-3  rounded">
-                        <span className="font-Vip text-white">Free</span>
-                      </div>
-                      <img
-                        src={item.poster_url}
-                        alt=""
-                        className="w-full h-full object-cover "
-                      />
-                    </div>
-
-                    {/* Nội dung */}
-                    <div className="flex-[3] bg-gray-600 px-3 py-2 flex flex-col justify-between gap-1">
-                      <div className="flex  ">
-                        <span className="font-Vip text-white text-lg hover:text-green-400 w-full">
-                          {item.name}
-                        </span>
-                      </div>
-                      <div className="flex gap-2 items-center   ">
-                        <div className="flex items-center text-green-400 ">
-                          {" "}
-                          <MdOutlineStar />{" "}
-                          <span className="text-green-400">
-                            {item.movie.tmdb.vote_average}
-                          </span>
-                        </div>
-                        <div className="border h-3"></div>
-                        <span className="text-white text-sm">{item.time}</span>
-                        <div className="border h-3"></div>
-                        <span className="text-white text-sm">{item.year}</span>
-                      </div>
-                      <div>
-                        <ul className="flex gap-3 items-center">
-                          <li className="px-2 bg-gray-500 text-white py-[3px] text-xs">
-                            Cổ trang{" "}
-                          </li>
-                          <li className="px-2 bg-gray-500 text-white py-[3px] text-xs">
-                            Tiên Hiệp
-                          </li>
-                          <li className="px-2 bg-gray-500 text-white py-[3px] text-xs">
-                            Tu Tiên
-                          </li>
-                        </ul>
-                      </div>
-                      <div className="">
-                        <span className="text-white text-xs  overflow-hidden line-clamp-6">
-                          {item.content}
-                        </span>
-                      </div>
-                      <div className="">
-                        <a
-                          href=""
-                          className="text-green-400 text-sm flex justify-end"
-                        >
-                          more info {">"}{" "}
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            </div>
-          ))}
         </div>
       </div>
     </div>

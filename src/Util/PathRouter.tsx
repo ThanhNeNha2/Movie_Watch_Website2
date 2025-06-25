@@ -7,7 +7,7 @@ const PathRouter = () => {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/detailmovies" element={<DetailMovies />} />
+      <Route path="/detailmovies/:movieName" element={<DetailMovies />} />
       <Route path="/play" element={<Play />} />
       <Route path="/contentSearch" element={<ContentSearch />} />
     </Routes>
