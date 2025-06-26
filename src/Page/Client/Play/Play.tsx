@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom"; // Thêm useNavigate
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import Hls from "hls.js";
@@ -88,10 +88,12 @@ interface NewMoviesApiResponse {
 const Play = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { movieName } = useParams<{ movieName: string }>();
+  const navigate = useNavigate(); // Khởi tạo useNavigate
   const [active, setActive] = useState(1);
   const [typeTapOrNoiDung, setTypeTapOrNoiDung] = useState("tap");
   const [typeDisplay, setTypeDisplay] = useState(false);
   const [startIndex, setStartIndex] = useState(0);
+  const [selectedEpisode, setSelectedEpisode] = useState<string | null>(null);
   const itemsPerPage = 6;
 
   // Resolve image URLs
@@ -143,20 +145,30 @@ const Play = () => {
   });
 
   // Handle video playback
-  const videoUrl = movie?.episodes?.[0]?.server_data?.[0]?.link_m3u8 || "";
-  useEffect(() => {
-    if (!videoRef.current || !videoUrl) return;
+  const playEpisode = (link_m3u8: string) => {
+    if (!videoRef.current || !link_m3u8) return;
 
     const video = videoRef.current;
 
     if (Hls.isSupported()) {
       const hls = new Hls();
-      hls.loadSource(videoUrl);
+      hls.loadSource(link_m3u8);
       hls.attachMedia(video);
+      video.play();
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = videoUrl;
+      video.src = link_m3u8;
+      video.play();
     }
-  }, [videoUrl]);
+  };
+
+  // Auto-play first episode when movie data is loaded
+  useEffect(() => {
+    if (movie?.episodes?.[0]?.server_data?.[0]?.link_m3u8) {
+      const firstEpisode = movie.episodes[0].server_data[0];
+      setSelectedEpisode(firstEpisode.slug);
+      playEpisode(firstEpisode.link_m3u8);
+    }
+  }, [movie]);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -298,12 +310,15 @@ const Play = () => {
                       {episodes.map((episode, index) => (
                         <li
                           key={episode.slug}
-                          className="flex gap-2 items-center hover:bg-gray-800 hover:text-green-400 cursor-pointer"
+                          className={`flex gap-2 items-center hover:bg-gray-800 hover:text-green-400 cursor-pointer ${
+                            selectedEpisode === episode.slug
+                              ? "bg-gray-800 text-green-400"
+                              : ""
+                          }`}
                           onClick={() => {
                             if (videoRef.current && episode.link_m3u8) {
-                              const hls = new Hls();
-                              hls.loadSource(episode.link_m3u8);
-                              hls.attachMedia(videoRef.current);
+                              setSelectedEpisode(episode.slug);
+                              playEpisode(episode.link_m3u8);
                             }
                           }}
                         >
@@ -325,12 +340,15 @@ const Play = () => {
                       {episodes.map((episode, index) => (
                         <li
                           key={episode.slug}
-                          className="w-10 h-10 flex justify-center items-center text-lg bg-gray-600 font-Bricolage font-medium text-white hover:text-green-400 cursor-pointer"
+                          className={`w-10 h-10 flex justify-center items-center text-lg font-Bricolage font-medium text-white hover:text-green-400 cursor-pointer ${
+                            selectedEpisode === episode.slug
+                              ? "bg-gray-800 text-green-400"
+                              : "bg-gray-600"
+                          }`}
                           onClick={() => {
                             if (videoRef.current && episode.link_m3u8) {
-                              const hls = new Hls();
-                              hls.loadSource(episode.link_m3u8);
-                              hls.attachMedia(videoRef.current);
+                              setSelectedEpisode(episode.slug);
+                              playEpisode(episode.link_m3u8);
                             }
                           }}
                         >
@@ -352,7 +370,13 @@ const Play = () => {
           <div className="flex-[4]">
             <div className="text-white flex flex-col gap-3">
               <span className="font-Bricolage font-semibold text-[30px]">
-                {movieTitle} {" > "} <span className="text-2xl">Tập 1</span>
+                {movieTitle} {" > "}{" "}
+                <span className="text-2xl">
+                  Tập{" "}
+                  {selectedEpisode
+                    ? episodes.find((e) => e.slug === selectedEpisode)?.name
+                    : "1"}
+                </span>
               </span>
               <div className="flex gap-2 items-center">
                 <div className="flex items-center text-green-400">
@@ -391,7 +415,7 @@ const Play = () => {
                   ))}
                 </ul>
               </div>
-              <div className="w-[40vw]">
+              <div className="w-full pr-10">
                 <span>Description:</span>
                 <span dangerouslySetInnerHTML={{ __html: movieDescription }} />
               </div>
@@ -421,6 +445,7 @@ const Play = () => {
                       <div
                         key={item._id || index}
                         className="group w-[calc(99%/6-12px)] overflow-visible cursor-pointer mb-10"
+                        onClick={() => navigate(`/detailmovies/${item.slug}`)} // Điều hướng đến trang chi tiết phim
                       >
                         <div className="h-[200px] rounded-md relative group">
                           <div className="absolute bg-green-400 right-0 px-3 overflow-hidden rounded z-30">

@@ -168,7 +168,15 @@ const DetailMovies: React.FC = () => {
   const movieSubDocquyen = movie.sub_docquyen || false;
   const movieTime = movie.time || movie.episode_total || "N/A";
   console.log("moviePosterUrl", moviePosterUrl); // Log for debugging
+  const getShortDescription = (htmlString: string, wordLimit: number) => {
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = htmlString;
+    const text = tempDiv.textContent || tempDiv.innerText || "";
+    const words = text.trim().split(/\s+/).slice(0, wordLimit).join(" ");
+    return words + (text.trim().split(/\s+/).length > wordLimit ? "..." : "");
+  };
 
+  const shortDescription = getShortDescription(movieDescription, 100);
   return (
     <div
       className="min-h-screen pb-5"
@@ -238,7 +246,7 @@ const DetailMovies: React.FC = () => {
             </div>
             <div className="w-[40vw]">
               <span>Description:</span>
-              <span dangerouslySetInnerHTML={{ __html: movieDescription }} />
+              <span>{shortDescription}</span>
             </div>
             <div className="flex gap-3">
               <Link to={`/play/${movie.slug}`}>

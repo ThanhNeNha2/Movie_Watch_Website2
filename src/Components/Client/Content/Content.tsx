@@ -127,7 +127,7 @@ const Content: React.FC = () => {
     <div className="h-auto">
       <div className="flex justify-between">
         <span className="font-Bricolage font-semibold text-[25px] text-white">
-          Phim Đề Cử
+          Phim Hoạt Hình
         </span>
         <span className="text-white hover:text-green-400 cursor-pointer">
           Xem tất cả
