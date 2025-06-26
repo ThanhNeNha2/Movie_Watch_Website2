@@ -1,46 +1,151 @@
-import TienNghich from "../../../../public/Slider/454973789_1043086304140741_634917588460075684_n.jpg";
-import daupha from "../../../../public/content/3d/daupha.jpg";
-import thuongnguyen from "../../../../public/content/3d/thuongnguyen.jpg";
-import thegioi from "../../../../public/content/3d/thegioi.jpg";
-import daula from "../../../../public/content/3d/daula.jpg";
-import thanan from "../../../../public/content/3d/thanan.jpg";
-import goju from "../../../../public/content/anime/goju.jpg";
-import Killua from "../../../../public/content/anime/Killua.jpg";
-import failtai from "../../../../public/content/anime/failtai.jpg";
-import naruto from "../../../../public/content/anime/naruto.jpg";
-import tanjiro from "../../../../public/content/anime/tanjiro.jpg";
-
-import { useState } from "react";
-import Header from "../../../Components/Client/Header/Header";
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import Hls from "hls.js";
+
+import Header from "../../../Components/Client/Header/Header";
 import { FiShare } from "react-icons/fi";
 import { MdBookmarkAdded, MdLiveTv, MdOutlineStar } from "react-icons/md";
 import { BiDownload } from "react-icons/bi";
 import { FaAngleLeft, FaAngleRight, FaListUl, FaPlay } from "react-icons/fa6";
 import { FaPhotoVideo } from "react-icons/fa";
 import { LiaThListSolid } from "react-icons/lia";
+
+// Define interfaces
+interface Category {
+  id?: string;
+  name: string;
+  slug?: string;
+}
+
+interface Country {
+  id?: string;
+  name: string;
+  slug?: string;
+}
+
+interface Episode {
+  name: string;
+  slug: string;
+  filename: string;
+  link_embed: string;
+  link_m3u8: string;
+}
+
+interface Server {
+  server_name: string;
+  server_data: Episode[];
+}
+
+interface Movie {
+  _id?: string;
+  name: string;
+  slug: string;
+  origin_name?: string;
+  content?: string;
+  year?: number;
+  category?: Category[];
+  country?: Country[];
+  vote_average?: number;
+  poster_url?: string;
+  thumb_url?: string;
+  sub_docquyen?: boolean;
+  time?: string;
+  episode_total?: string;
+  episode_current?: string;
+  actor?: string[];
+  director?: string[];
+  status?: string;
+  quality?: string;
+  lang?: string;
+  episodes?: Server[];
+}
+
+interface NewMovie {
+  _id?: string;
+  name: string;
+  slug: string;
+  thumb_url: string;
+}
+
+interface ApiResponse {
+  pageProps: {
+    data: {
+      item: Movie;
+    };
+  };
+}
+
+interface NewMoviesApiResponse {
+  status: string;
+  data: {
+    items: NewMovie[];
+    APP_DOMAIN_CDN_IMAGE: string;
+  };
+}
+
 const Play = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [active, setActive] = useState(1); // Bắt đầu với null để không chọn item nào
+  const { movieName } = useParams<{ movieName: string }>();
+  const [active, setActive] = useState(1);
+  const [typeTapOrNoiDung, setTypeTapOrNoiDung] = useState("tap");
+  const [typeDisplay, setTypeDisplay] = useState(false);
+  const [startIndex, setStartIndex] = useState(0);
+  const itemsPerPage = 6;
 
-  const items = [
-    { id: 1, title: "Hội Thuật Sư", img: failtai },
-    { id: 2, title: "Thanh Gươm Diệt Qủy", img: tanjiro },
-    { id: 3, title: "Đấu Phá Thương Khung", img: daupha },
-    { id: 4, title: "Thương Nguyên Đồ ", img: thuongnguyen },
-    { id: 5, title: "Thế Giới Hoàn Mỹ ", img: thegioi },
-    { id: 6, title: "Đấu La Đại Lục", img: daula },
-    { id: 7, title: "Thần Ấn Vương Tọa", img: thanan },
-    { id: 8, title: "Naruto", img: naruto },
-    { id: 9, title: "Chú Thuật Sư", img: goju },
-    { id: 10, title: "Hunter x Hunter", img: Killua },
-  ];
-  // Sử lý video
-  const videoUrl =
-    "https://vip.opstream12.com/20240924/23748_d8bc5c8d/index.m3u8";
+  // Resolve image URLs
+  const IMAGE_BASE_URL = "https://img.ophim.live/uploads/movies/";
+  const resolveImageUrl = (url?: string): string => {
+    if (!url) return "/fallback-image.jpg";
+    if (url.startsWith("http")) return url;
+    return IMAGE_BASE_URL + url;
+  };
+
+  // Fetch movie data from API
+  const fetchMovie = async (): Promise<Movie> => {
+    const response = await axios.get<ApiResponse>(
+      `http://localhost:8080/api/movie/${movieName}`
+    );
+    console.log("Movie API Response:", response.data);
+    return response.data.pageProps.data.item;
+  };
+
+  const {
+    data: movie,
+    isLoading: isMovieLoading,
+    error: movieError,
+  } = useQuery({
+    queryKey: ["movie", movieName],
+    queryFn: fetchMovie,
+    enabled: !!movieName,
+  });
+
+  // Fetch new movies for "Phim Đề Cử"
+  const fetchNewMovies = async (): Promise<NewMovie[]> => {
+    const response = await axios.get<NewMoviesApiResponse>(
+      `https://ophim1.com/v1/api/danh-sach/phim-vietsub?page=1&sort_field=&category=${
+        movie?.category?.[0]?.slug || "hinh-su"
+      }&country=&year=`
+    );
+    console.log("New Movies API Response:", response.data);
+    return response.data.data.items;
+  };
+
+  const {
+    data: newMovies,
+    isLoading: isNewMoviesLoading,
+    error: newMoviesError,
+  } = useQuery({
+    queryKey: ["GoiY", movie?.category?.[0]?.slug],
+    queryFn: fetchNewMovies,
+    enabled: !!movie,
+  });
+
+  // Handle video playback
+  const videoUrl = movie?.episodes?.[0]?.server_data?.[0]?.link_m3u8 || "";
   useEffect(() => {
-    if (!videoRef.current) return; // Kiểm tra nếu videoRef chưa gán giá trị
+    if (!videoRef.current || !videoUrl) return;
 
     const video = videoRef.current;
 
@@ -51,55 +156,72 @@ const Play = () => {
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = videoUrl;
     }
+  }, [videoUrl]);
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
   }, []);
 
-  // check thong tin
-  const [typeTapOrNoiDung, setTypeTapOrNoiDung] = useState("tap");
   const checkTypeTapOrNoiDung = (type: string) => {
-    if (type === "tap") {
-      setTypeTapOrNoiDung("tap");
-    }
-    if (type === "noidung") {
-      setTypeTapOrNoiDung("noidung");
-    }
+    setTypeTapOrNoiDung(type);
   };
 
-  // check kiểu hiển thị các tập phim
-  const [typeDisplay, setTypeDisplay] = useState(false);
+  if (isMovieLoading || isNewMoviesLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <span className="text-white ml-3 text-lg font-medium">Đang tải...</span>
+      </div>
+    );
+  }
 
-  const arr = Array.from({ length: 14 }, (_, i) => ({
-    id: i + 1,
-    name: `Phim ${i + 1}`,
-    img: "../../../../public/Slider/454973789_1043086304140741_634917588460075684_n.jpg", // Giả lập ảnh bìa
-  }));
-  const [startIndex, setStartIndex] = useState(0);
-  const itemsPerPage = 6;
+  if (movieError || !movie || newMoviesError) {
+    return (
+      <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-6 text-red-200 mx-4">
+        <div className="flex items-center">
+          <div className="text-red-400 mr-3 text-xl">⚠️</div>
+          <div>
+            <h3 className="font-semibold text-lg">Lỗi tải dữ liệu</h3>
+            <p className="text-red-300 mt-1">
+              {movieError
+                ? `Lỗi phim: ${(movieError as Error).message}`
+                : newMoviesError
+                ? `Lỗi gợi ý: ${(newMoviesError as Error).message}`
+                : "Không tìm thấy dữ liệu."}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  // Lấy danh sách phim theo startIndex
-  const displayedItems = arr.slice(startIndex, startIndex + itemsPerPage);
+  // Map movie data
+  const movieTitle = movie.name || movie.origin_name || "Không có tiêu đề";
+  const movieDescription = movie.content || "Chưa có mô tả cho phim này.";
+  const movieCategories = movie.category || [];
+  const movieVoteAverage = movie.vote_average || 0;
+  const movieActors = movie.actor || [];
+  const movieEpisodeTotal = movie.episode_total || "N/A";
+  const episodes = movie?.episodes?.[0]?.server_data || [];
+
   return (
     <div style={{ background: "rgb(17, 19, 25)" }}>
       <Header />
       <div className="px-[150px] mt-5">
-        <div className="flex  h-[553px]">
-          {/* TRAI  */}
-          <div className="flex-[4]  flex flex-col  ">
+        <div className="flex h-[553px]">
+          {/* Left: Video Player */}
+          <div className="flex-[4] flex flex-col">
             <div className="bg-black h-[503px] overflow-hidden">
-              {/* <video ref={videoRef} controls className="w-full h-full"></video> */}
-              <video
-                src="https://cdn.pixabay.com/video/2021/08/10/84574-586228759_large.mp4"
-                controls
-              ></video>
+              <video ref={videoRef} controls className="w-full h-full"></video>
             </div>
             <div
               className="h-[50px] text-white px-10 flex justify-between"
               style={{ background: "rgb(26, 28, 34)" }}
             >
-              {/* trai */}
               <div className="flex items-center gap-7">
                 <div className="flex items-center gap-2 text-base cursor-pointer hover:text-green-400">
                   <div className="text-xl">
-                    {" "}
                     <MdBookmarkAdded />
                   </div>
                   <span>Sưu Tập</span>
@@ -108,107 +230,111 @@ const Play = () => {
                   <div className="text-xl">
                     <FiShare />
                   </div>
-
                   <span>Chia sẻ</span>
                 </div>
               </div>
-
-              {/* phai */}
               <div className="flex items-center gap-7">
                 <div className="flex items-center gap-2 text-base cursor-pointer hover:text-green-400">
                   <div className="text-xl">
                     <MdLiveTv />
                   </div>
-
                   <span>Xem trên tivi</span>
                 </div>
                 <div className="flex items-center gap-2 text-base cursor-pointer hover:text-green-400">
-                  {" "}
                   <div className="text-xl">
-                    <BiDownload />{" "}
+                    <BiDownload />
                   </div>
-                  <span>Chiếu ở thiết bị đầu cuối khách hàng </span>
+                  <span>Chiếu ở thiết bị đầu cuối khách hàng</span>
                 </div>
               </div>
             </div>
           </div>
-          {/* PHAI */}
+          {/* Right: Episode Selection */}
           <div
             className="flex-[1.2] flex flex-col px-4 py-5 gap-3 text-white"
             style={{ background: "rgb(26, 28, 34)" }}
           >
-            {/*  */}
             <div>
-              <span className="font-Bricolage font-semibold text-2xl ">
-                Tiên Nghịch
+              <span className="font-Bricolage font-semibold text-2xl">
+                {movieTitle}
               </span>
             </div>
-            {/*  */}
             <div className="flex justify-between">
               <button
                 className={`flex items-center justify-center py-2 rounded-l gap-2 text-sm flex-1 ${
-                  typeTapOrNoiDung === "tap" ? "bg-gray-700" : " bg-gray-800"
+                  typeTapOrNoiDung === "tap" ? "bg-gray-700" : "bg-gray-800"
                 } px-2 hover:text-green-400`}
                 onClick={() => checkTypeTapOrNoiDung("tap")}
               >
-                {" "}
                 <FaPhotoVideo /> Chọn tập
               </button>
               <button
                 className={`flex items-center justify-center py-2 rounded-r gap-2 text-sm flex-1 ${
-                  typeTapOrNoiDung === "noidung"
-                    ? "bg-gray-700"
-                    : " bg-gray-800"
+                  typeTapOrNoiDung === "noidung" ? "bg-gray-700" : "bg-gray-800"
                 } px-2 hover:text-green-400`}
                 onClick={() => checkTypeTapOrNoiDung("noidung")}
               >
-                {" "}
                 Nội dung đặc sắc
               </button>
             </div>
             {typeTapOrNoiDung === "tap" ? (
               <>
-                {/* + */}
-                <div className="flex justify-between items-center text-xl ">
+                <div className="flex justify-between items-center text-xl">
                   <span className="text-sm hover:text-white">
-                    Chọn tập 1-36{" "}
+                    Chọn tập 1-{movieEpisodeTotal}
                   </span>
                   <div
                     className={`hover:text-green-400 cursor-pointer ${
                       typeDisplay ? "text-2xl" : "text-xl"
                     }`}
-                    onClick={() => {
-                      setTypeDisplay(!typeDisplay);
-                    }}
+                    onClick={() => setTypeDisplay(!typeDisplay)}
                   >
                     {typeDisplay ? <LiaThListSolid /> : <FaListUl />}
                   </div>
                 </div>
-                {/* + */}
-                <div className="  overflow-y-auto   border-gray-700   custom-scrollbar ">
+                <div className="overflow-y-auto border-gray-700 custom-scrollbar">
                   {typeDisplay ? (
                     <ul className="flex flex-col gap-3">
-                      {Array.from({ length: 45 }, (_, index) => (
-                        <li className="flex   gap-2 items-center hover:bg-gray-800 hover:text-green-400 cursor-pointer">
+                      {episodes.map((episode, index) => (
+                        <li
+                          key={episode.slug}
+                          className="flex gap-2 items-center hover:bg-gray-800 hover:text-green-400 cursor-pointer"
+                          onClick={() => {
+                            if (videoRef.current && episode.link_m3u8) {
+                              const hls = new Hls();
+                              hls.loadSource(episode.link_m3u8);
+                              hls.attachMedia(videoRef.current);
+                            }
+                          }}
+                        >
                           <div className="w-[45%] h-[70px] rounded">
                             <img
-                              src={TienNghich}
+                              src={resolveImageUrl(movie.thumb_url)}
                               alt=""
                               className="w-full h-full rounded object-cover"
                             />
                           </div>
-                          <span>Tiên Nghịch Tập {index + 1}</span>
+                          <span>
+                            {movieTitle} Tập {episode.name}
+                          </span>
                         </li>
                       ))}
                     </ul>
                   ) : (
                     <ul className="flex flex-wrap gap-3 justify-center pb-5 mb-7">
-                      {Array.from({ length: 45 }, (_, index) => (
+                      {episodes.map((episode, index) => (
                         <li
-                          key={index}
+                          key={episode.slug}
                           className="w-10 h-10 flex justify-center items-center text-lg bg-gray-600 font-Bricolage font-medium text-white hover:text-green-400 cursor-pointer"
+                          onClick={() => {
+                            if (videoRef.current && episode.link_m3u8) {
+                              const hls = new Hls();
+                              hls.loadSource(episode.link_m3u8);
+                              hls.attachMedia(videoRef.current);
+                            }
+                          }}
                         >
-                          {index + 1}
+                          {episode.name}
                         </li>
                       ))}
                     </ul>
@@ -216,8 +342,8 @@ const Play = () => {
                 </div>
               </>
             ) : (
-              <div className="flex justify-center items-center h-28 ">
-                <span>Nội dung đang cập nhật .... </span>
+              <div className="flex justify-center items-center h-28">
+                <span>Nội dung đang cập nhật ....</span>
               </div>
             )}
           </div>
@@ -225,76 +351,59 @@ const Play = () => {
         <div className="text-white py-6 flex">
           <div className="flex-[4]">
             <div className="text-white flex flex-col gap-3">
-              <span className="font-Bricolage font-semibold text-[30px] ">
-                Tiên Nghịch {" > "} <span className="text-2xl">Tập 1</span>
+              <span className="font-Bricolage font-semibold text-[30px]">
+                {movieTitle} {" > "} <span className="text-2xl">Tập 1</span>
               </span>
-
-              <div className="flex gap-2 items-center   ">
-                <div className="flex items-center text-green-400 ">
-                  {" "}
-                  <MdOutlineStar /> <span className="text-green-400">9.4</span>
+              <div className="flex gap-2 items-center">
+                <div className="flex items-center text-green-400">
+                  <MdOutlineStar />
+                  <span className="text-green-400">
+                    {movieVoteAverage.toFixed(1) || "N/A"}
+                  </span>
                 </div>
-                <span> {" (18.9k người đã đánh giá )"}</span>
+                <span> (18.9k người đã đánh giá)</span>
               </div>
               <div className="flex gap-3">
-                <span>Thể loại :</span>
+                <span>Thể loại:</span>
                 <ul className="flex gap-3 items-center">
-                  <li className=" rounded-sm px-2 bg-gray-500 text-white py-[3px] text-xs">
-                    Cổ trang{" "}
-                  </li>
-                  <li className=" rounded-sm px-2 bg-gray-500 text-white py-[3px] text-xs">
-                    Tiên Hiệp
-                  </li>
-                  <li className=" rounded-sm px-2 bg-gray-500 text-white py-[3px] text-xs">
-                    Tu Tiên
-                  </li>
+                  {movieCategories.map((cat, index) => (
+                    <li
+                      key={cat.id || index}
+                      className="rounded-sm px-2 bg-gray-500 text-white py-[3px] text-xs"
+                    >
+                      {cat.name}
+                    </li>
+                  ))}
                 </ul>
               </div>
-
-              {/*  */}
-              <div className="flex gap-3">
-                <span>Diễn viên :</span>
-                <ul className="flex gap-3 items-center">
-                  <li className=" rounded-sm px-2 bg-gray-500 text-white py-[3px] text-xs">
-                    Trịnh Trần Phương Tuấn
-                  </li>
-                  <li className=" rounded-sm px-2 bg-gray-500 text-white py-[3px] text-xs">
-                    Trịnh Trần Phương Tuấn
-                  </li>
-                  <li className=" rounded-sm px-2 bg-gray-500 text-white py-[3px] text-xs">
-                    Trịnh Trần Phương Tuấn
-                  </li>
-                </ul>
-              </div>
-
-              {/*  */}
-
-              <div className="w-[40vw]">
-                <span> Description: </span>
-                <span>
-                  “Tiên Nghịch” của tác giả Nhĩ Căn, kể về thiếu niên bình phàm
-                  Vương Lâm xuất thân nông thôn, mang theo nhiệt huyết, tu luyện
-                  nghịch tiên, không chỉ cầu trường sinh, mà còn muốn thoát khỏi
-                  thân phận giun dế. Hắn tin rằng đạo do người quyết định, dùng
-                  tư chất bình phàm bước vào con đường tu chân, trải qua bao
-                  phong ba bão táp, dựa vào trí tuệ sáng suốt, từng bước một
-                  bước lên đỉnh cao, dựa vào sức một người, danh chấn Tu chân
-                  giới..
+              <div className="flex flex-wrap items-start gap-3">
+                <span className="font-semibold text-sm text-white mt-[3px]">
+                  Diễn viên:
                 </span>
+                <ul className="flex flex-wrap gap-2">
+                  {movieActors.map((actor, index) => (
+                    <li
+                      key={index}
+                      className="px-3 py-1 bg-indigo-600 text-white text-xs rounded-full hover:bg-indigo-700 transition duration-200 shadow-sm"
+                    >
+                      {actor}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="w-[40vw]">
+                <span>Description:</span>
+                <span dangerouslySetInnerHTML={{ __html: movieDescription }} />
               </div>
             </div>
-            {/* cái gạch */}
             <div className="border-[0.01px] border-gray-500 mt-7 mr-10"></div>
-            {/* danh sach phim de cu   */}
             <div className="flex flex-col mt-10">
               <div className="flex justify-between">
-                {" "}
-                <span className=" font-Bricolage font-semibold text-[25px] text-white  ">
+                <span className="font-Bricolage font-semibold text-[25px] text-white">
                   Gợi ý phim
                 </span>
               </div>
               <div className="flex items-center justify-between mt-5 w-[95%]">
-                {/* Nút Trái */}
                 <div
                   className={`text-2xl cursor-pointer hover:text-gray-400 ${
                     startIndex === 0 ? "opacity-50 cursor-not-allowed" : ""
@@ -305,54 +414,50 @@ const Play = () => {
                 >
                   <FaAngleLeft />
                 </div>
-                {/* Danh sách phim */}
-                <div className="flex gap-4 justify-around    w-[90%]">
-                  {displayedItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="  group w-[calc(99%/6-12px)] overflow-visible cursor-pointer mb-10"
-                    >
-                      {/* Thumbnail */}
-                      <div className="h-[200px] rounded-md relative group ">
-                        <div className="absolute bg-green-400 right-0 px-3 overflow-hidden rounded  z-30">
-                          <span className="font-Vip text-white">Free</span>
+                <div className="flex gap-4 justify-around w-[90%]">
+                  {newMovies
+                    ?.slice(startIndex, startIndex + itemsPerPage)
+                    .map((item, index) => (
+                      <div
+                        key={item._id || index}
+                        className="group w-[calc(99%/6-12px)] overflow-visible cursor-pointer mb-10"
+                      >
+                        <div className="h-[200px] rounded-md relative group">
+                          <div className="absolute bg-green-400 right-0 px-3 overflow-hidden rounded z-30">
+                            <span className="font-Vip text-white">Free</span>
+                          </div>
+                          <img
+                            src={`https://img.ophim.live/uploads/movies/${item.thumb_url}`}
+                            alt={item.name}
+                            className="w-full h-full object-cover transition rounded-md duration-300 transform group-hover:scale-105"
+                          />
+                          <div className="absolute bottom-2 left-2 z-50 text-xs">
+                            {item.episode_current || "N/A"}
+                          </div>
+                          <div className="absolute top-1/2 left-1/2 z-50 rounded-full w-10 h-10 bg-green-400 flex justify-center items-center transform -translate-x-1/2 -translate-y-1/2 text-sm opacity-0 group-hover:opacity-100">
+                            <FaPlay />
+                          </div>
                         </div>
-                        <img
-                          src={naruto}
-                          alt={item.name}
-                          className="w-full h-full object-cover transition rounded-md duration-300 transform group-hover:scale-105"
-                        />
-                        <div className="absolute bottom-2 left-2 z-50  text-xs">
-                          24 tập
-                        </div>
-                        <div
-                          className="absolute top-1/2 left-1/2 z-50 rounded-full w-10 h-10 bg-green-400 
-                        flex justify-center items-center transform -translate-x-1/2 -translate-y-1/2 text-sm opacity-0 group-hover:opacity-100"
-                        >
-                          <FaPlay />
+                        <div className="mt-2">
+                          <span className="text-white group-hover:text-green-400">
+                            {item.name}
+                          </span>
                         </div>
                       </div>
-
-                      {/* Tên phim */}
-                      <div className="mt-2">
-                        <span className="text-white group-hover:text-green-400">
-                          {item.name}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
-
-                {/* Nút Phải */}
                 <div
                   className={`text-2xl cursor-pointer hover:text-gray-400 ${
-                    startIndex + itemsPerPage >= arr.length
+                    startIndex + itemsPerPage >= newMovies?.length
                       ? "opacity-50 cursor-not-allowed"
                       : ""
                   }`}
                   onClick={() =>
                     setStartIndex((prev) =>
-                      Math.min(arr.length - itemsPerPage, prev + itemsPerPage)
+                      Math.min(
+                        newMovies?.length - itemsPerPage || 0,
+                        prev + itemsPerPage
+                      )
                     )
                   }
                 >
@@ -360,9 +465,7 @@ const Play = () => {
                 </div>
               </div>
             </div>
-            {/* cái gạch */}
             <div className="border-[0.01px] border-gray-500 mt-7 mr-10"></div>
-            <div></div>
           </div>
           <div className="flex-[1.2] flex flex-col gap-4">
             <div>
@@ -372,26 +475,24 @@ const Play = () => {
             </div>
             <div className="flex flex-col">
               <div onMouseLeave={() => setActive(1)}>
-                {" "}
-                {/* Reset khi rời khỏi danh sách */}
-                {items.map((item) => (
+                {newMovies?.slice(0, 10).map((item, index) => (
                   <div
-                    key={item.id}
+                    key={item._id || index}
                     className={`flex flex-col gap-2 px-3 py-3 rounded transition ${
-                      active === item.id ? "bg-gray-800" : "bg-transparent"
+                      active === index + 1 ? "bg-gray-800" : "bg-transparent"
                     }`}
-                    onMouseEnter={() => setActive(item.id)} // Khi hover vào, set trạng thái active
+                    onMouseEnter={() => setActive(index + 1)}
                   >
                     <div className="flex gap-3 font-Bricolage">
                       <span className="text-green-400 font-bold">
-                        {item.id}
+                        {index + 1}
                       </span>
-                      <span>{item.title}</span>
+                      <span>{item.name}</span>
                     </div>
-                    {active === item.id && (
+                    {active === index + 1 && (
                       <div className="pl-10">
                         <img
-                          src={item.img}
+                          src={`https://img.ophim.live/uploads/movies/${item.thumb_url}`}
                           alt=""
                           className="w-[100px] h-[150px] object-cover"
                         />
