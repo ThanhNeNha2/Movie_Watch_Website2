@@ -1,38 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { MdOutlineStar, MdSearch, MdFilterList, MdClear } from "react-icons/md";
-import { Link, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-
-// Định nghĩa interface cho dữ liệu phim
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-interface Tmdb {
-  vote_average?: number;
-}
-
-interface Imdb {
-  vote_average?: number;
-}
-
-interface Movie {
-  _id: string;
-  name: string;
-  slug: string;
-  thumb_url: string;
-  poster_url: string;
-  sub_docquyen: boolean;
-  time: string;
-  year: number;
-  category: Category[];
-  tmdb?: Tmdb;
-  imdb?: Imdb;
-  description?: string;
-}
+import { MdSearch, MdFilterList, MdClear } from "react-icons/md";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 interface Filters {
   page: number;
@@ -40,10 +8,12 @@ interface Filters {
   filterCategory: string;
   filterCountry: string;
   filterYear: string;
+  filterType: string; // Added filterType for movie type
 }
 
 const Search: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [isFilterExpanded, setIsFilterExpanded] = useState<boolean>(false);
   const [filters, setFilters] = useState<Filters>({
     page: parseInt(searchParams.get("page") || "1") || 1,
@@ -51,80 +21,77 @@ const Search: React.FC = () => {
     filterCategory: searchParams.get("category") || "",
     filterCountry: searchParams.get("country") || "",
     filterYear: searchParams.get("year") || "",
+    filterType: searchParams.get("type") || "", // Initialize filterType from URL
   });
 
   useEffect(() => {
+    // Sync filters with URL query parameters
     setFilters({
       page: parseInt(searchParams.get("page") || "1") || 1,
       sortField: searchParams.get("sort_field") || "",
       filterCategory: searchParams.get("category") || "",
       filterCountry: searchParams.get("country") || "",
       filterYear: searchParams.get("year") || "",
+      filterType: searchParams.get("type") || "",
     });
   }, [searchParams]);
-
-  const fetchMovies = async (): Promise<Movie[]> => {
-    const response = await axios.get(
-      "https://ophim1.com/v1/api/danh-sach/hoat-hinh",
-      {
-        params: {
-          page: filters.page,
-          sort_field: filters.sortField,
-          filterCategory: filters.filterCategory
-            ? [filters.filterCategory]
-            : [],
-          filterCountry: filters.filterCountry ? [filters.filterCountry] : [],
-          filterYear: filters.filterYear,
-        },
-      }
-    );
-    return response.data.data.items;
-  };
-
-  const {
-    data: movies,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["movies", filters],
-    queryFn: fetchMovies,
-  });
 
   const handleFilterChange = (
     e: React.ChangeEvent<HTMLSelectElement>
   ): void => {
     const { name, value } = e.target;
-    setFilters((prev) => ({
-      ...prev,
+    const newFilters = {
+      ...filters,
       [name]: value,
-      page: 1,
-    }));
+      page: 1, // Reset to page 1 when changing filters
+    };
+    setFilters(newFilters);
+
+    // Update URL query parameters without reloading
+    const queryParams = new URLSearchParams({
+      page: newFilters.page.toString(),
+      sort_field: newFilters.sortField,
+      category: newFilters.filterCategory,
+      country: newFilters.filterCountry,
+      year: newFilters.filterYear,
+      type: newFilters.filterType, // Include filterType in query
+    }).toString();
+    setSearchParams(queryParams, { replace: true }); // Update URL without reload
   };
 
   const handleSearch = (): void => {
+    // Navigate to /ListMoveSearch with query parameters
     const queryParams = new URLSearchParams({
       page: filters.page.toString(),
       sort_field: filters.sortField,
       category: filters.filterCategory,
       country: filters.filterCountry,
       year: filters.filterYear,
+      type: filters.filterType, // Include filterType in navigation
     }).toString();
-    setSearchParams(queryParams, { replace: true });
-    window.history.pushState(
-      null,
-      "",
-      `http://localhost:5173/danh-sach/hoat-hinh?${queryParams}`
-    );
+    navigate(`/ListMoveSearch?${queryParams}`); // Navigate to new route
   };
 
   const clearFilters = (): void => {
-    setFilters({
+    const newFilters = {
       page: 1,
       sortField: "",
       filterCategory: "",
       filterCountry: "",
       filterYear: "",
-    });
+      filterType: "", // Reset filterType
+    };
+    setFilters(newFilters);
+    // Update URL query parameters without reloading
+    const queryParams = new URLSearchParams({
+      page: newFilters.page.toString(),
+      sort_field: newFilters.sortField,
+      category: newFilters.filterCategory,
+      country: newFilters.filterCountry,
+      year: newFilters.filterYear,
+      type: newFilters.filterType,
+    }).toString();
+    setSearchParams(queryParams, { replace: true });
   };
 
   const toggleFilters = (): void => {
@@ -135,31 +102,9 @@ const Search: React.FC = () => {
     filters.sortField ||
       filters.filterCategory ||
       filters.filterCountry ||
-      filters.filterYear
+      filters.filterYear ||
+      filters.filterType // Include filterType in active filters check
   );
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64 bg-gray-900 rounded-lg">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-        <span className="text-white ml-3 text-lg font-medium">Đang tải...</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-6 text-red-200 mx-4">
-        <div className="flex items-center">
-          <div className="text-red-400 mr-3 text-xl">⚠️</div>
-          <div>
-            <h3 className="font-semibold text-lg">Có lỗi xảy ra</h3>
-            <p className="text-red-300 mt-1">Lỗi: {(error as Error).message}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-6">
@@ -359,6 +304,41 @@ const Search: React.FC = () => {
                       )
                     )}
                     <option value="before-2000">Trước 2000</option>
+                  </select>
+                </div>
+
+                {/* Movie Type Filter */}
+                <div className="space-y-2">
+                  <label
+                    htmlFor="filterType"
+                    className="text-xs font-semibold text-gray-300 block uppercase tracking-wide"
+                  >
+                    Loại phim
+                  </label>
+                  <select
+                    id="filterType"
+                    name="filterType"
+                    value={filters.filterType}
+                    onChange={handleFilterChange}
+                    className="w-full px-3 py-2 bg-white text-black rounded-lg border border-gray-300 
+                             focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 transition-all duration-200
+                             hover:bg-gray-100 cursor-pointer shadow-sm text-sm"
+                  >
+                    <option value="">- Tất cả -</option>
+                    <option value="phim-le">Phim Lẻ</option>
+                    <option value="phim-moi">Phim Mới</option>
+                    <option value="phim-bo">Phim Bộ</option>
+                    <option value="tv-shows">TV Shows</option>
+                    <option value="hoat-hinh">Hoạt Hình</option>
+                    <option value="phim-vietsub">Phim Vietsub</option>
+                    <option value="phim-thuyet-minh">Phim Thuyết Minh</option>
+                    <option value="phim-long-tieng">Phim Lồng Tiếng</option>
+                    <option value="phim-bo-dang-chieu">
+                      Phim Bộ Đang Chiếu
+                    </option>
+                    <option value="phim-tron-bo">Phim Trọn Bộ</option>
+                    <option value="phim-sap-chieu">Phim Sắp Chiếu</option>
+                    <option value="subteam">Subteam</option>
                   </select>
                 </div>
               </div>
