@@ -1,9 +1,8 @@
 import React from "react";
 import { MdOutlineStar } from "react-icons/md";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { useState, useEffect } from "react";
 
 // Định nghĩa interface cho dữ liệu phim
 interface Category {
@@ -38,46 +37,30 @@ interface Movie {
   imdb?: Imdb;
 }
 
-interface Filters {
-  page: number;
-  sortField: string;
-  filterCategory: string;
-  filterCountry: string;
-  filterYear: string;
-}
-
 const Content: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [filters, setFilters] = useState<Filters>({
-    page: parseInt(searchParams.get("page") || "1") || 1,
-    sortField: searchParams.get("sort_field") || "",
-    filterCategory: searchParams.get("category") || "",
-    filterCountry: searchParams.get("country") || "",
-    filterYear: searchParams.get("year") || "",
-  });
-
-  useEffect(() => {
-    setFilters({
-      page: parseInt(searchParams.get("page") || "1") || 1,
-      sortField: searchParams.get("sort_field") || "",
-      filterCategory: searchParams.get("category") || "",
-      filterCountry: searchParams.get("country") || "",
-      filterYear: searchParams.get("year") || "",
-    });
-  }, [searchParams]);
+  // Use static filters to avoid reacting to URL changes
+  const staticFilters = {
+    page: 1,
+    sortField: "",
+    filterCategory: "",
+    filterCountry: "",
+    filterYear: "",
+  };
 
   const fetchMovies = async (): Promise<Movie[]> => {
     const response = await axios.get(
       "https://ophim1.com/v1/api/danh-sach/hoat-hinh",
       {
         params: {
-          page: filters.page,
-          sort_field: filters.sortField,
-          filterCategory: filters.filterCategory
-            ? [filters.filterCategory]
+          page: staticFilters.page,
+          sort_field: staticFilters.sortField,
+          filterCategory: staticFilters.filterCategory
+            ? [staticFilters.filterCategory]
             : [],
-          filterCountry: filters.filterCountry ? [filters.filterCountry] : [],
-          filterYear: filters.filterYear,
+          filterCountry: staticFilters.filterCountry
+            ? [staticFilters.filterCountry]
+            : [],
+          filterYear: staticFilters.filterYear,
         },
       }
     );
@@ -89,35 +72,9 @@ const Content: React.FC = () => {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["movies", filters],
+    queryKey: ["movies", staticFilters], // Static queryKey to prevent refetching
     queryFn: fetchMovies,
   });
-
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFilters((prev) => ({
-      ...prev,
-      [name]: value,
-      page: 1,
-    }));
-  };
-
-  const handleSearch = () => {
-    const queryParams = new URLSearchParams({
-      page: filters.page.toString(),
-      sort_field: filters.sortField,
-      category: filters.filterCategory,
-      country: filters.filterCountry,
-      year: filters.filterYear,
-    }).toString();
-    setSearchParams(queryParams, { replace: true });
-    // Cập nhật URL thành http://localhost:5173/danh-sach/hoat-hinh?...
-    window.history.pushState(
-      null,
-      "",
-      `http://localhost:5173/danh-sach/hoat-hinh?${queryParams}`
-    );
-  };
 
   if (isLoading) return <div className="text-white">Đang tải...</div>;
   if (error)

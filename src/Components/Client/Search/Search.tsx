@@ -320,9 +320,10 @@ const Search: React.FC = () => {
                     name="filterType"
                     value={filters.filterType}
                     onChange={handleFilterChange}
-                    className="w-full px-3 py-2 bg-white text-black rounded-lg border border-gray-300 
+                    className="w-full px-3 py-2 bg-gray-700/90 text-white rounded-lg border border-gray-600/50 
                              focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 transition-all duration-200
-                             hover:bg-gray-100 cursor-pointer shadow-sm text-sm"
+                             hover:bg-gray-700 hover:border-gray-500 cursor-pointer backdrop-blur-sm
+                             shadow-md hover:shadow-lg font-medium text-sm"
                   >
                     <option value="">- Tất cả -</option>
                     <option value="phim-le">Phim Lẻ</option>
