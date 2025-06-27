@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Header from "../../../Components/Client/Header/Header";
 import Search from "../../../Components/Client/Search/Search";
 import { MdOutlineStar } from "react-icons/md";
@@ -40,6 +40,24 @@ interface Movie {
   imdb?: Imdb;
 }
 
+// Interface cho dữ liệu phân trang
+interface Pagination {
+  totalItems: number;
+  totalItemsPerPage: number;
+  currentPage: number;
+  pageRanges: number;
+}
+
+// Interface cho response API
+interface ApiResponse {
+  data: {
+    items: Movie[];
+    params: {
+      pagination: Pagination;
+    };
+  };
+}
+
 // Component skeleton loading
 const MovieSkeleton = () => (
   <div className="w-[calc(100%/6-12px)] mb-10">
@@ -49,7 +67,7 @@ const MovieSkeleton = () => (
 );
 
 const ListMoveSearch = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Extract parameters from the URL
   const filters = {
@@ -69,7 +87,7 @@ const ListMoveSearch = () => {
       "phim-le": "Phim Lẻ",
     }[filters.type] || "Danh Sách Phim";
 
-  const fetchMovies = async (): Promise<Movie[]> => {
+  const fetchMovies = async (): Promise<ApiResponse> => {
     const response = await axios.get("http://localhost:8080/api/list-movie", {
       params: {
         page: filters.page,
@@ -80,14 +98,10 @@ const ListMoveSearch = () => {
         type: filters.type,
       },
     });
-    return response.data.items || response.data.data?.items || [];
+    return response.data;
   };
 
-  const {
-    data: movies = [],
-    isLoading,
-    error,
-  } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: [
       "movies",
       filters.page,
@@ -98,9 +112,42 @@ const ListMoveSearch = () => {
       filters.type,
     ],
     queryFn: fetchMovies,
-    keepPreviousData: true, // Giữ dữ liệu cũ trong khi tải dữ liệu mới
-    staleTime: 5 * 60 * 1000, // Cache dữ liệu trong 5 phút
+    keepPreviousData: true,
+    staleTime: 5 * 60 * 1000,
   });
+
+  const movies = data?.data.items || [];
+  const pagination = data?.data.params.pagination || {
+    totalItems: 0,
+    totalItemsPerPage: 24,
+    currentPage: 1,
+    pageRanges: 5,
+  };
+
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [filters.page]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(
+    pagination.totalItems / pagination.totalItemsPerPage
+  );
+  const currentPage = pagination.currentPage;
+  const pageRange = Math.min(pagination.pageRanges, totalPages);
+  const startPage = Math.max(1, currentPage - Math.floor(pageRange / 2));
+  const endPage = Math.min(totalPages, startPage + pageRange - 1);
+  const pages = Array.from(
+    { length: endPage - startPage + 1 },
+    (_, i) => startPage + i
+  );
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set("page", page.toString());
+    setSearchParams(newSearchParams);
+  };
 
   return (
     <div className="h-auto">
@@ -121,10 +168,8 @@ const ListMoveSearch = () => {
           </div>
           <div className="flex flex-wrap justify-between mt-5">
             {isLoading && !movies.length
-              ? // Hiển thị skeleton khi đang tải và không có dữ liệu cũ
-                [...Array(6)].map((_, index) => <MovieSkeleton key={index} />)
-              : // Hiển thị danh sách phim
-                movies.map((item: Movie) => (
+              ? [...Array(6)].map((_, index) => <MovieSkeleton key={index} />)
+              : movies.map((item: Movie) => (
                   <div
                     key={item._id}
                     className="relative group w-[calc(100%/6-12px)] overflow-visible cursor-pointer mb-10 rounded"
@@ -272,6 +317,51 @@ const ListMoveSearch = () => {
                   </div>
                 ))}
           </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-8">
+              {/* Previous Button */}
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded-md text-sm font-medium ${
+                  currentPage === 1
+                    ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-800 text-white hover:bg-gray-700"
+                }`}
+              >
+                Trước
+              </button>
+
+              {/* Page Numbers */}
+              {pages.map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${
+                    page === currentPage
+                      ? "bg-green-400 text-white"
+                      : "bg-gray-800 text-white hover:bg-gray-700"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              {/* Next Button */}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded-md text-sm font-medium ${
+                  currentPage === totalPages
+                    ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-800 text-white hover:bg-gray-700"
+                }`}
+              >
+                Sau
+              </button>
+            </div>
+          )}
         </div>
       </div>
       <Flooter />
