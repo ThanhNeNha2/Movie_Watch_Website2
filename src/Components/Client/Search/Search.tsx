@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { MdSearch, MdFilterList, MdClear } from "react-icons/md";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom"; // Added useLocation
 
 interface Filters {
   page: number;
@@ -8,12 +8,13 @@ interface Filters {
   filterCategory: string;
   filterCountry: string;
   filterYear: string;
-  filterType: string; // Added filterType for movie type
+  filterType: string;
 }
 
 const Search: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation(); // Added to get current pathname
   const [isFilterExpanded, setIsFilterExpanded] = useState<boolean>(false);
   const [filters, setFilters] = useState<Filters>({
     page: parseInt(searchParams.get("page") || "1") || 1,
@@ -21,11 +22,10 @@ const Search: React.FC = () => {
     filterCategory: searchParams.get("category") || "",
     filterCountry: searchParams.get("country") || "",
     filterYear: searchParams.get("year") || "",
-    filterType: searchParams.get("type") || "", // Initialize filterType from URL
+    filterType: searchParams.get("type") || "",
   });
 
   useEffect(() => {
-    // Sync filters with URL query parameters
     setFilters({
       page: parseInt(searchParams.get("page") || "1") || 1,
       sortField: searchParams.get("sort_field") || "",
@@ -43,33 +43,31 @@ const Search: React.FC = () => {
     const newFilters = {
       ...filters,
       [name]: value,
-      page: 1, // Reset to page 1 when changing filters
+      page: 1,
     };
     setFilters(newFilters);
 
-    // Update URL query parameters without reloading
     const queryParams = new URLSearchParams({
       page: newFilters.page.toString(),
       sort_field: newFilters.sortField,
       category: newFilters.filterCategory,
       country: newFilters.filterCountry,
       year: newFilters.filterYear,
-      type: newFilters.filterType, // Include filterType in query
+      type: newFilters.filterType,
     }).toString();
-    setSearchParams(queryParams, { replace: true }); // Update URL without reload
+    setSearchParams(queryParams, { replace: true });
   };
 
   const handleSearch = (): void => {
-    // Navigate to /ListMoveSearch with query parameters
     const queryParams = new URLSearchParams({
       page: filters.page.toString(),
       sort_field: filters.sortField,
       category: filters.filterCategory,
       country: filters.filterCountry,
       year: filters.filterYear,
-      type: filters.filterType, // Include filterType in navigation
+      type: filters.filterType,
     }).toString();
-    navigate(`/ListMoveSearch?${queryParams}`); // Navigate to new route
+    navigate(`/ListMoveSearch?${queryParams}`);
   };
 
   const clearFilters = (): void => {
@@ -79,10 +77,9 @@ const Search: React.FC = () => {
       filterCategory: "",
       filterCountry: "",
       filterYear: "",
-      filterType: "", // Reset filterType
+      filterType: "",
     };
     setFilters(newFilters);
-    // Update URL query parameters without reloading
     const queryParams = new URLSearchParams({
       page: newFilters.page.toString(),
       sort_field: newFilters.sortField,
@@ -103,16 +100,17 @@ const Search: React.FC = () => {
       filters.filterCategory ||
       filters.filterCountry ||
       filters.filterYear ||
-      filters.filterType // Include filterType in active filters check
+      filters.filterType
   );
+
+  // Check if the current path is /ListMoveSearch
+  const isListMoveSearch = location.pathname === "/ListMoveSearch";
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-6">
       <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 rounded-2xl shadow-2xl border border-gray-700/50 backdrop-blur-sm overflow-hidden">
-        {/* Header Section */}
         <div className="bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-blue-600/10 p-1">
           <div className="bg-gray-800/95 rounded-xl">
-            {/* Title and Mobile Toggle */}
             <div className="flex items-center justify-between p-6 pb-4">
               <div className="flex items-center gap-4">
                 <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg shadow-lg">
@@ -128,7 +126,6 @@ const Search: React.FC = () => {
                 </div>
               </div>
 
-              {/* Mobile Filter Toggle */}
               <button
                 onClick={toggleFilters}
                 className="lg:hidden p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-all duration-200 shadow-md hover:shadow-lg"
@@ -142,7 +139,6 @@ const Search: React.FC = () => {
               </button>
             </div>
 
-            {/* Filters Container */}
             <div
               className={`px-6 pb-6 transition-all duration-500 ease-in-out overflow-hidden ${
                 isFilterExpanded
@@ -150,7 +146,6 @@ const Search: React.FC = () => {
                   : "max-h-0 opacity-0 lg:max-h-screen lg:opacity-100"
               } lg:block`}
             >
-              {/* Filter Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-6">
                 {/* Sort Field */}
                 <div className="space-y-2">
@@ -273,6 +268,7 @@ const Search: React.FC = () => {
                     <option value="chau-phi">Châu Phi</option>
                     <option value="nam-phi">Nam Phi</option>
                     <option value="ukraina">Ukraina</option>
+
                     <option value="a-rap-xe-ut">Ả Rập Xê Út</option>
                   </select>
                 </div>
@@ -347,18 +343,21 @@ const Search: React.FC = () => {
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between pt-4 border-t border-gray-700/50">
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <button
-                    onClick={handleSearch}
-                    className="group relative px-6 py-2.5 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 
-                             text-white font-semibold rounded-lg shadow-md hover:shadow-lg 
-                             transform hover:scale-105 active:scale-95 transition-all duration-200 
-                             flex items-center justify-center gap-2 min-w-[130px]
-                             before:absolute before:inset-0 before:bg-gradient-to-r before:from-blue-700 before:via-purple-700 before:to-blue-700
-                             before:rounded-lg before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-200 before:-z-10"
-                  >
-                    <MdSearch className="text-lg group-hover:rotate-12 transition-transform duration-200" />
-                    <span className="text-sm">Tìm Kiếm</span>
-                  </button>
+                  {/* Conditionally render the search button */}
+                  {!isListMoveSearch && (
+                    <button
+                      onClick={handleSearch}
+                      className="group relative px-6 py-2.5 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 
+                               text-white font-semibold rounded-lg shadow-md hover:shadow-lg 
+                               transform hover:scale-105 active:scale-95 transition-all duration-200 
+                               flex items-center justify-center gap-2 min-w-[130px]
+                               before:absolute before:inset-0 before:bg-gradient-to-r before:from-blue-700 before:via-purple-700 before:to-blue-700
+                               before:rounded-lg before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-200 before:-z-10"
+                    >
+                      <MdSearch className="text-lg group-hover:rotate-12 transition-transform duration-200" />
+                      <span className="text-sm">Tìm Kiếm</span>
+                    </button>
+                  )}
 
                   {hasActiveFilters && (
                     <button
@@ -373,11 +372,13 @@ const Search: React.FC = () => {
                   )}
                 </div>
 
-                {/* Active Filters Indicator */}
                 {hasActiveFilters && (
                   <div className="flex items-center gap-2 text-xs text-gray-300 bg-gray-700/50 rounded-md px-3 py-1.5">
                     <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span className="font-medium">Đang áp dụng bộ lọc</span>
+                    <span className="font-medium">
+                      {" "}
+                      Bạn đang áp dụng bộ lọc
+                    </span>
                   </div>
                 )}
               </div>

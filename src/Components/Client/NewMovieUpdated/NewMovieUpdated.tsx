@@ -67,9 +67,15 @@ const NewMovieUpdated: React.FC = () => {
         <span className="font-Bricolage font-semibold text-[25px] text-white">
           Phim Lẻ Mới Cập Nhật
         </span>
-        <span className="text-white hover:text-green-400 cursor-pointer">
-          Xem tất cả
-        </span>
+        <Link
+          to={
+            "/ListMoveSearch?page=1&sort_field=&category=&country=&year=&type=phim-le"
+          }
+        >
+          <span className="text-white hover:text-green-400 cursor-pointer">
+            Xem tất cả
+          </span>
+        </Link>
       </div>
       <div className="flex flex-wrap justify-between mt-5">
         {movies?.map((item: Movie) => (
