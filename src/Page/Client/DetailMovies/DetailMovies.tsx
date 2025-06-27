@@ -291,14 +291,14 @@ const DetailMovies: React.FC = () => {
       >
         <div className="flex justify-between">
           <span className="font-Bricolage font-semibold text-[25px] text-white">
-            Phim Đề Cử
+            Phim Gợi ý
           </span>
-          <Link
+          {/* <Link
             to="/movies"
             className="text-white hover:text-green-400 cursor-pointer"
           >
             Xem tất cả
-          </Link>
+          </Link> */}
         </div>
         {isNewMoviesLoading ? (
           <div className="text-white">Đang tải phim đề cử...</div>

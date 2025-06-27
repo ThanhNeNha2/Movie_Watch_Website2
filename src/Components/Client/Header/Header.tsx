@@ -13,16 +13,39 @@ import { TfiAlarmClock } from "react-icons/tfi";
 import { FaUserEdit } from "react-icons/fa";
 import { FaSignOutAlt } from "react-icons/fa";
 import { FaList } from "react-icons/fa";
-
 import "./Header.css";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+
 const Header = ({ isScrolled }: any) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isHoveredHistory, setIsHoveredHistory] = useState(false);
   const [isHoveredUser, setIsHoveredUser] = useState(false);
   const [isHoveredApp, setIsHoveredApp] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(""); // State for search input
   const userInfo = { name: "Vo Chi Thanh" };
   const location = useLocation();
+  const navigate = useNavigate(); // Hook for navigation
+
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Handle search submission (e.g., clicking the search icon)
+  const handleSearchSubmit = () => {
+    if (searchQuery.trim()) {
+      // Encode the search query and navigate to /SearchName
+      const encodedQuery = encodeURIComponent(searchQuery.trim());
+      navigate(`/SearchName?keyword=${encodedQuery}`);
+    }
+  };
+
+  // Handle Enter key press for search
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      handleSearchSubmit();
+    }
+  };
 
   return (
     <div
@@ -35,33 +58,33 @@ const Header = ({ isScrolled }: any) => {
       }`}
     >
       {/* LEFT */}
-      <div className=" flex items-center gap-5 h-full font-Vip  ">
+      <div className="flex items-center gap-5 h-full font-Vip">
         <Link to={"/"}>
           <span className="text-green-500 font-bold text-3xl cursor-pointer">
             CTPlay
           </span>
         </Link>
         <span className="font-semibold text-base cursor-pointer hover:text-green-500">
-          Đề xuất{" "}
+          Đề xuất
         </span>
         <span className="font-medium text-base cursor-pointer hover:text-green-500">
-          Bạch Nguyệt Phạn Tinh{" "}
+          Bạch Nguyệt Phạn Tinh
         </span>
         <div
-          className="flex items-center gap-1  cursor-pointer hover:text-green-500"
-          onMouseEnter={() => setIsHovered(true)} // Hover vào để thay đổi state
-          onMouseLeave={() => setIsHovered(false)} // Khi rời chuột
+          className="flex items-center gap-1 cursor-pointer hover:text-green-500"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
-          <span className="font-medium text-base relative">Khác </span>
+          <span className="font-medium text-base relative">Khác</span>
           <div className="text-xs">
             {isHovered ? <BiSolidUpArrow /> : <BiSolidDownArrow />}
           </div>
-          {isHovered ? (
-            <div className="absolute top-[30px] w-[15%]   ">
+          {isHovered && (
+            <div className="absolute top-[30px] w-[15%]">
               <div
-                onMouseEnter={() => setIsHovered(true)} // Giữ trạng thái khi chuột trong div con
-                onMouseLeave={() => setIsHovered(false)} // Ẩn khi chuột ra ngoài cả cha lẫn con
-                className="  w-[100%] mt-9 overflow-y-scroll h-[300px] flex justify-center items-center text-center bg-gray-800 text-gray-400 font-medium"
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+                className="w-[100%] mt-9 overflow-y-scroll h-[300px] flex justify-center items-center text-center bg-gray-800 text-gray-400 font-medium"
               >
                 <ul className="w-full pt-7">
                   <li className="py-2 hover:text-green-500 hover:bg-gray-600 w-full h-full">
@@ -103,16 +126,13 @@ const Header = ({ isScrolled }: any) => {
                 </ul>
               </div>
             </div>
-          ) : (
-            ""
           )}
         </div>
       </div>
       {/* RIGHT */}
-
-      <div className=" flex items-center gap-5">
-        {/*  */}
-        <div className="  relative rounded-md shadow-sm z-10">
+      <div className="flex items-center gap-5">
+        {/* Search Bar */}
+        <div className="relative rounded-md shadow-sm z-10">
           <input
             type="text"
             className="rounded-md w-full focus:outline-none focus:ring-0 focus:border-none text-white placeholder-white py-[5px] px-1 pr-14 pl-3"
@@ -123,99 +143,93 @@ const Header = ({ isScrolled }: any) => {
               border: "none",
             }}
             placeholder="Giọt Mưa Mang Mùi Rỉ Sét"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onKeyPress={handleKeyPress} // Trigger search on Enter key
           />
-
           <div
             className="absolute top-0 right-0 flex items-center h-full text-white font-bold border-l px-3 cursor-pointer hover:text-green-500"
             style={{
-              borderLeft: "2px solid rgba(255, 255, 255, 0.2)", // Sử dụng borderLeft để chỉ định cạnh trái
+              borderLeft: "2px solid rgba(255, 255, 255, 0.2)",
             }}
+            onClick={handleSearchSubmit} // Trigger search on click
           >
             <FaSearch />
           </div>
         </div>
-        {/*  */}
+        {/* History */}
         <div
-          className="flex flex-col  justify-center items-center cursor-pointer hover:text-green-500"
-          onMouseEnter={() => setIsHoveredHistory(true)} // Hover vào để thay đổi state
-          onMouseLeave={() => setIsHoveredHistory(false)} // Khi rời chuột
+          className="flex flex-col justify-center items-center cursor-pointer hover:text-green-500"
+          onMouseEnter={() => setIsHoveredHistory(true)}
+          onMouseLeave={() => setIsHoveredHistory(false)}
         >
-          <div className="text-lg ">
-            {" "}
+          <div className="text-lg">
             <MdOutlineWatchLater />
           </div>
-          <i className="text-sm">Lịch sử xem </i>
-          {isHoveredHistory ? (
-            <div className="absolute top-[30px] w-[15%]   ">
+          <i className="text-sm">Lịch sử xem</i>
+          {isHoveredHistory && (
+            <div className="absolute top-[30px] w-[15%]">
               <div
-                onMouseEnter={() => setIsHoveredHistory(true)} // Giữ trạng thái khi chuột trong div con
-                onMouseLeave={() => setIsHoveredHistory(false)} // Ẩn khi chuột ra ngoài cả cha lẫn con
-                className="  w-[100%] mt-9 overflow-y-scroll h-[200px] flex  flex-col gap-5 justify-center items-center text-center 
-                bg-gray-800 text-gray-400 font-medium  px-3"
+                onMouseEnter={() => setIsHoveredHistory(true)}
+                onMouseLeave={() => setIsHoveredHistory(false)}
+                className="w-[100%] mt-9 overflow-y-scroll h-[200px] flex flex-col gap-5 justify-center items-center text-center bg-gray-800 text-gray-400 font-medium px-3"
               >
                 <span className="text-white text-sm">
-                  {" "}
                   Đăng nhập để quản lý lịch sử xem nội dung trên các thiết bị
                   khác nhau.
                 </span>
-                <button className=" flex justify-center items-center bg-green-500 text-white font-medium px-3 py-1 rounded-lg hover:bg-green-400 ">
-                  Đăng nhập{" "}
+                <button className="flex justify-center items-center bg-green-500 text-white font-medium px-3 py-1 rounded-lg hover:bg-green-400">
+                  Đăng nhập
                 </button>
               </div>
             </div>
-          ) : (
-            ""
           )}
-        </div>{" "}
-        {/*  */}
-        <div className="flex flex-col   justify-center items-center cursor-pointer hover:text-green-500  ">
-          <div className="text-lg ">
-            {" "}
+        </div>
+        {/* Language */}
+        <div className="flex flex-col justify-center items-center cursor-pointer hover:text-green-500">
+          <div className="text-lg">
             <MdLanguage />
           </div>
           <i className="text-sm">Ngôn ngữ</i>
         </div>
-        {/*  */}
+        {/* User */}
         <div
-          className="flex flex-col  justify-center items-center  cursor-pointer hover:text-green-500"
-          onMouseEnter={() => setIsHoveredUser(true)} // Hover vào để thay đổi state
-          onMouseLeave={() => setIsHoveredUser(false)} // Khi rời chuột
+          className="flex flex-col justify-center items-center cursor-pointer hover:text-green-500"
+          onMouseEnter={() => setIsHoveredUser(true)}
+          onMouseLeave={() => setIsHoveredUser(false)}
         >
-          <div className="text-lg ">
-            {" "}
+          <div className="text-lg">
             <FaRegUser />
           </div>
-          <span className="text-sm">Của tôi </span>
-          {isHoveredUser ? (
+          <span className="text-sm">Của tôi</span>
+          {isHoveredUser && (
             <div
               className={`absolute top-[30px] ${
-                userInfo ? " w-[20%]" : "  w-[15%]"
-              }   `}
+                userInfo ? "w-[20%]" : "w-[15%]"
+              }`}
             >
               <div
-                onMouseEnter={() => setIsHoveredUser(true)} // Giữ trạng thái khi chuột trong div con
-                onMouseLeave={() => setIsHoveredUser(false)} // Ẩn khi chuột ra ngoài cả cha lẫn con
-                className={` w-[90%] mt-9 overflow-y-scroll ${
+                onMouseEnter={() => setIsHoveredUser(true)}
+                onMouseLeave={() => setIsHoveredUser(false)}
+                className={`w-[90%] mt-9 overflow-y-scroll ${
                   userInfo
                     ? "h-auto pb-2"
-                    : " h-[200px] justify-center  px-3 gap-5"
-                } flex  flex-col   items-center text-center 
-                bg-gray-800 text-gray-400 font-medium `}
+                    : "h-[200px] justify-center px-3 gap-5"
+                } flex flex-col items-center text-center bg-gray-800 text-gray-400 font-medium`}
               >
                 {!userInfo ? (
                   <>
                     <span className="text-white text-sm">
-                      {" "}
                       Đăng nhập để xem được những nội dung mới nhất
                     </span>
-                    <button className=" flex justify-center items-center bg-green-500 text-white font-medium px-3 py-1 rounded-lg hover:bg-green-400 ">
-                      Đăng nhập{" "}
+                    <button className="flex justify-center items-center bg-green-500 text-white font-medium px-3 py-1 rounded-lg hover:bg-green-400">
+                      Đăng nhập
                     </button>
                   </>
                 ) : (
                   <>
-                    <div className=" flex justify-center gap-3 items-center text-white bg-green-500 w-full h-[70px] ">
-                      <div className="w-10 h-10 overflow-hidden object-contain object-bottom rounded-full ">
+                    <div className="flex justify-center gap-3 items-center text-white bg-green-500 w-full h-[70px]">
+                      <div className="w-10 h-10 overflow-hidden object-contain object-bottom rounded-full">
                         <img
                           src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRmVYhzeZEEjRRHAK2T3OZgtGVLCnf6zGkzg&s"
                           alt=""
@@ -224,53 +238,43 @@ const Header = ({ isScrolled }: any) => {
                       <span>{userInfo.name}</span>
                     </div>
                     <div className="py-1 w-full">
-                      {/*  */}
-                      <div className="flex items-center justify-between w-full   px-5 py-2 hover:bg-gray-600 hover:text-green-500">
+                      <div className="flex items-center justify-between w-full px-5 py-2 hover:bg-gray-600 hover:text-green-500">
                         <div className="flex items-center gap-2">
-                          <MdBookmarkAdded /> <span>Sưu tập của tôi </span>
+                          <MdBookmarkAdded /> <span>Sưu tập của tôi</span>
                         </div>
                         <div className="text-xs">
-                          {" "}
                           <FaChevronRight />
                         </div>
                       </div>
-                      {/*  */}{" "}
-                      <div className="flex items-center justify-between w-full   px-5 py-2 hover:bg-gray-600 hover:text-green-500">
+                      <div className="flex items-center justify-between w-full px-5 py-2 hover:bg-gray-600 hover:text-green-500">
                         <div className="flex items-center gap-2">
-                          <TfiAlarmClock /> <span>Phim đặt trước </span>
+                          <TfiAlarmClock /> <span>Phim đặt trước</span>
                         </div>
                         <div className="text-xs">
-                          {" "}
                           <FaChevronRight />
                         </div>
                       </div>
-                      {/*  */}{" "}
-                      <div className="flex items-center justify-between w-full   px-5 py-2 hover:bg-gray-600 hover:text-green-500">
+                      <div className="flex items-center justify-between w-full px-5 py-2 hover:bg-gray-600 hover:text-green-500">
                         <div className="flex items-center gap-2">
-                          <FaList /> <span>Bản dịch phụ đề </span>
+                          <FaList /> <span>Bản dịch phụ đề</span>
                         </div>
                         <div className="text-xs">
-                          {" "}
                           <FaChevronRight />
                         </div>
                       </div>
-                      {/*  */}{" "}
-                      <div className="flex items-center justify-between w-full   px-5 py-2 hover:bg-gray-600 hover:text-green-500">
+                      <div className="flex items-center justify-between w-full px-5 py-2 hover:bg-gray-600 hover:text-green-500">
                         <div className="flex items-center gap-2">
-                          <FaUserEdit /> <span>Cài đặt cá nhân </span>
+                          <FaUserEdit /> <span>Cài đặt cá nhân</span>
                         </div>
                         <div className="text-xs">
-                          {" "}
                           <FaChevronRight />
                         </div>
                       </div>
-                      {/*  */}{" "}
-                      <div className="flex items-center justify-between w-full   px-5 py-2 hover:bg-gray-600 hover:text-green-500">
+                      <div className="flex items-center justify-between w-full px-5 py-2 hover:bg-gray-600 hover:text-green-500">
                         <div className="flex items-center gap-2">
-                          <FaSignOutAlt /> <span>Đăng xuất </span>
+                          <FaSignOutAlt /> <span>Đăng xuất</span>
                         </div>
                         <div className="text-xs">
-                          {" "}
                           <FaChevronRight />
                         </div>
                       </div>
@@ -279,60 +283,51 @@ const Header = ({ isScrolled }: any) => {
                 )}
               </div>
             </div>
-          ) : (
-            ""
           )}
         </div>
-        {/*  */}
+        {/* App */}
         <div
-          className="flex items-center gap-2  border border-gray-200 hover:border-green-500 px-4 
-        py-2 rounded-md cursor-pointer hover:text-green-500"
-          onMouseEnter={() => setIsHoveredApp(true)} // Hover vào để thay đổi state
-          onMouseLeave={() => setIsHoveredApp(false)} // Khi rời chuột
+          className="flex items-center gap-2 border border-gray-200 hover:border-green-500 px-4 py-2 rounded-md cursor-pointer hover:text-green-500"
+          onMouseEnter={() => setIsHoveredApp(true)}
+          onMouseLeave={() => setIsHoveredApp(false)}
         >
-          <div className="font-bold   text-xl">
-            {" "}
+          <div className="font-bold text-xl">
             <HiMiniFolderArrowDown />
           </div>
-          <i className="font-medium">App </i>
-          {isHoveredApp ? (
-            <div className="absolute top-[30px] right-20 w-[15%]   ">
+          <i className="font-medium">App</i>
+          {isHoveredApp && (
+            <div className="absolute top-[30px] right-20 w-[15%]">
               <div
-                onMouseEnter={() => setIsHoveredApp(true)} // Giữ trạng thái khi chuột trong div con
-                onMouseLeave={() => setIsHoveredApp(false)} // Ẩn khi chuột ra ngoài cả cha lẫn con
-                className="  w-[100%] mt-9 overflow-y-scroll h-[70px] flex  flex-col gap-5 justify-center items-center text-center 
-                bg-gray-800 text-gray-400 font-medium  px-3"
+                onMouseEnter={() => setIsHoveredApp(true)}
+                onMouseLeave={() => setIsHoveredApp(false)}
+                className="w-[100%] mt-9 overflow-y-scroll h-[70px] flex flex-col gap-5 justify-center items-center text-center bg-gray-800 text-gray-400 font-medium px-3"
               >
                 <span className="text-white text-sm">
                   Chức năng đang trong quá trình phát triển
                 </span>
               </div>
             </div>
-          ) : (
-            ""
           )}
         </div>
-        {/*  */}
+        {/* VIP */}
         <div
-          className="flex items-center gap-2  px-4 py-2 rounded-md relative  cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 rounded-md relative cursor-pointer"
           style={{
             background: "rgb(242, 191, 131)",
           }}
         >
           <div className="font-bold text-black text-xl">
-            {" "}
             <RiVipCrown2Fill />
           </div>
-          <span className="font-semibold text-base text-black  font-Vip  ">
-            Vip{" "}
+          <span className="font-semibold text-base text-black font-Vip">
+            Vip
           </span>
-
           <div
-            className="absolute right-0 px-1  bg-red-500 flex items-center justify-center"
+            className="absolute right-0 px-1 bg-red-500 flex items-center justify-center"
             style={{
-              top: "0", // Canh trên
-              transform: "translate(0%, -50%)", // Dịch chuyển để nằm giữa đường viền
-              borderRadius: "3px", // Tùy chọn góc bo tròn
+              top: "0",
+              transform: "translate(0%, -50%)",
+              borderRadius: "3px",
             }}
           >
             <span className="text-white text-xs">0.06$/day</span>

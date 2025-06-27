@@ -38,6 +38,14 @@ interface Server {
   server_data: Episode[];
 }
 
+interface Tmdb {
+  vote_average?: number;
+}
+
+interface Imdb {
+  vote_average?: number;
+}
+
 interface Movie {
   _id?: string;
   name: string;
@@ -47,7 +55,6 @@ interface Movie {
   year?: number;
   category?: Category[];
   country?: Country[];
-  vote_average?: number;
   poster_url?: string;
   thumb_url?: string;
   sub_docquyen?: boolean;
@@ -60,6 +67,8 @@ interface Movie {
   quality?: string;
   lang?: string;
   episodes?: Server[];
+  tmdb?: Tmdb;
+  imdb?: Imdb;
 }
 
 interface NewMovie {
@@ -225,7 +234,8 @@ const Play: React.FC = () => {
   const movieTitle = movie.name || movie.origin_name || "Không có tiêu đề";
   const movieDescription = movie.content || "Chưa có mô tả cho phim này.";
   const movieCategories = movie.category || [];
-  const movieVoteAverage = movie.vote_average || 0;
+  const movieVoteAverage =
+    movie.tmdb?.vote_average || movie.imdb?.vote_average || 0;
   const movieActors = movie.actor || [];
   const movieEpisodeTotal = movie.episode_total || "N/A";
   const episodes = movie?.episodes?.[0]?.server_data || [];
@@ -393,7 +403,7 @@ const Play: React.FC = () => {
                       : `Tập ${
                           episodes.find((e) => e.slug === selectedEpisode)?.name
                         }`
-                    : "1"}
+                    : episodes[0]?.name || "1"}
                 </span>
               </span>
               <div className="flex gap-2 items-center">
@@ -403,7 +413,7 @@ const Play: React.FC = () => {
                     {movieVoteAverage.toFixed(1) || "N/A"}
                   </span>
                 </div>
-                <span> (18.9k người đã đánh giá)</span>
+                <span> ( Đang cập nhật lượng người đã đánh giá )</span>
               </div>
               <div className="flex gap-3">
                 <span>Thể loại:</span>
@@ -532,7 +542,7 @@ const Play: React.FC = () => {
                       </span>
                       <span>{item.name}</span>
                     </div>
-                    {active === index + "1" && (
+                    {active === index + 1 && (
                       <div className="pl-10">
                         <img
                           src={`https://img.ophim.live/uploads/movies/${item.thumb_url}`}
