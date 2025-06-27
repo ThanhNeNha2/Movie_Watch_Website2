@@ -1,16 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // Thêm useNavigate
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import Hls from "hls.js";
-
-import Header from "../../../Components/Client/Header/Header";
 import { FiShare } from "react-icons/fi";
 import { MdBookmarkAdded, MdLiveTv, MdOutlineStar } from "react-icons/md";
 import { BiDownload } from "react-icons/bi";
 import { FaAngleLeft, FaAngleRight, FaListUl, FaPlay } from "react-icons/fa6";
 import { FaPhotoVideo } from "react-icons/fa";
 import { LiaThListSolid } from "react-icons/lia";
+
+import Header from "../../../Components/Client/Header/Header";
 
 // Define interfaces
 interface Category {
@@ -67,6 +67,7 @@ interface NewMovie {
   name: string;
   slug: string;
   thumb_url: string;
+  episode_current?: string;
 }
 
 interface ApiResponse {
@@ -85,14 +86,16 @@ interface NewMoviesApiResponse {
   };
 }
 
-const Play = () => {
+const Play: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const { movieName } = useParams<{ movieName: string }>();
-  const navigate = useNavigate(); // Khởi tạo useNavigate
-  const [active, setActive] = useState(1);
-  const [typeTapOrNoiDung, setTypeTapOrNoiDung] = useState("tap");
-  const [typeDisplay, setTypeDisplay] = useState(false);
-  const [startIndex, setStartIndex] = useState(0);
+  const { movieName } = useParams<{ movieName?: string }>();
+  const navigate = useNavigate();
+  const [active, setActive] = useState<number>(1);
+  const [typeTapOrNoiDung, setTypeTapOrNoiDung] = useState<"tap" | "noidung">(
+    "tap"
+  );
+  const [typeDisplay, setTypeDisplay] = useState<boolean>(false);
+  const [startIndex, setStartIndex] = useState<number>(0);
   const [selectedEpisode, setSelectedEpisode] = useState<string | null>(null);
   const itemsPerPage = 6;
 
@@ -106,6 +109,7 @@ const Play = () => {
 
   // Fetch movie data from API
   const fetchMovie = async (): Promise<Movie> => {
+    if (!movieName) throw new Error("Movie name is required");
     const response = await axios.get<ApiResponse>(
       `http://localhost:8080/api/movie/${movieName}`
     );
@@ -145,19 +149,20 @@ const Play = () => {
   });
 
   // Handle video playback
-  const playEpisode = (link_m3u8: string) => {
+  const playEpisode = (link_m3u8: string, episodeSlug: string) => {
     if (!videoRef.current || !link_m3u8) return;
 
+    setSelectedEpisode(episodeSlug);
     const video = videoRef.current;
 
     if (Hls.isSupported()) {
       const hls = new Hls();
       hls.loadSource(link_m3u8);
       hls.attachMedia(video);
-      video.play();
+      video.play().catch((error) => console.error("Video play failed:", error));
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = link_m3u8;
-      video.play();
+      video.play().catch((error) => console.error("Video play failed:", error));
     }
   };
 
@@ -166,16 +171,16 @@ const Play = () => {
     if (movie?.episodes?.[0]?.server_data?.[0]?.link_m3u8) {
       const firstEpisode = movie.episodes[0].server_data[0];
       setSelectedEpisode(firstEpisode.slug);
-      playEpisode(firstEpisode.link_m3u8);
+      playEpisode(firstEpisode.link_m3u8, firstEpisode.slug);
     }
   }, [movie]);
 
   // Scroll to top on mount
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const checkTypeTapOrNoiDung = (type: string) => {
+  const checkTypeTapOrNoiDung = (type: "tap" | "noidung") => {
     setTypeTapOrNoiDung(type);
   };
 
@@ -197,9 +202,17 @@ const Play = () => {
             <h3 className="font-semibold text-lg">Lỗi tải dữ liệu</h3>
             <p className="text-red-300 mt-1">
               {movieError
-                ? `Lỗi phim: ${(movieError as Error).message}`
+                ? `Lỗi phim: ${
+                    movieError instanceof Error
+                      ? movieError.message
+                      : "Unknown error"
+                  }`
                 : newMoviesError
-                ? `Lỗi gợi ý: ${(newMoviesError as Error).message}`
+                ? `Lỗi gợi ý: ${
+                    newMoviesError instanceof Error
+                      ? newMoviesError.message
+                      : "Unknown error"
+                  }`
                 : "Không tìm thấy dữ liệu."}
             </p>
           </div>
@@ -307,7 +320,7 @@ const Play = () => {
                 <div className="overflow-y-auto border-gray-700 custom-scrollbar">
                   {typeDisplay ? (
                     <ul className="flex flex-col gap-3">
-                      {episodes.map((episode, index) => (
+                      {episodes.map((episode) => (
                         <li
                           key={episode.slug}
                           className={`flex gap-2 items-center hover:bg-gray-800 hover:text-green-400 cursor-pointer ${
@@ -317,8 +330,7 @@ const Play = () => {
                           }`}
                           onClick={() => {
                             if (videoRef.current && episode.link_m3u8) {
-                              setSelectedEpisode(episode.slug);
-                              playEpisode(episode.link_m3u8);
+                              playEpisode(episode.link_m3u8, episode.slug);
                             }
                           }}
                         >
@@ -330,14 +342,17 @@ const Play = () => {
                             />
                           </div>
                           <span>
-                            {movieTitle} Tập {episode.name}
+                            {movieTitle}{" "}
+                            {episode.name === "Full"
+                              ? "Full"
+                              : `Tập ${episode.name}`}
                           </span>
                         </li>
                       ))}
                     </ul>
                   ) : (
                     <ul className="flex flex-wrap gap-3 justify-center pb-5 mb-7">
-                      {episodes.map((episode, index) => (
+                      {episodes.map((episode) => (
                         <li
                           key={episode.slug}
                           className={`w-10 h-10 flex justify-center items-center text-lg font-Bricolage font-medium text-white hover:text-green-400 cursor-pointer ${
@@ -347,8 +362,7 @@ const Play = () => {
                           }`}
                           onClick={() => {
                             if (videoRef.current && episode.link_m3u8) {
-                              setSelectedEpisode(episode.slug);
-                              playEpisode(episode.link_m3u8);
+                              playEpisode(episode.link_m3u8, episode.slug);
                             }
                           }}
                         >
@@ -372,9 +386,13 @@ const Play = () => {
               <span className="font-Bricolage font-semibold text-[30px]">
                 {movieTitle} {" > "}{" "}
                 <span className="text-2xl">
-                  Tập{" "}
                   {selectedEpisode
-                    ? episodes.find((e) => e.slug === selectedEpisode)?.name
+                    ? episodes.find((e) => e.slug === selectedEpisode)?.name ===
+                      "Full"
+                      ? "Full"
+                      : `Tập ${
+                          episodes.find((e) => e.slug === selectedEpisode)?.name
+                        }`
                     : "1"}
                 </span>
               </span>
@@ -444,8 +462,8 @@ const Play = () => {
                     .map((item, index) => (
                       <div
                         key={item._id || index}
-                        className="group w-[calc(99%/6-12px)] overflow-visible cursor-pointer mb-10"
-                        onClick={() => navigate(`/detailmovies/${item.slug}`)} // Điều hướng đến trang chi tiết phim
+                        className="group w-[calc(99%/6-12px)] overflow-visible cursor-pointer mb bunny-10"
+                        onClick={() => navigate(`/detailmovies/${item.slug}`)}
                       >
                         <div className="h-[200px] rounded-md relative group">
                           <div className="absolute bg-green-400 right-0 px-3 overflow-hidden rounded z-30">
@@ -514,7 +532,7 @@ const Play = () => {
                       </span>
                       <span>{item.name}</span>
                     </div>
-                    {active === index + 1 && (
+                    {active === index + "1" && (
                       <div className="pl-10">
                         <img
                           src={`https://img.ophim.live/uploads/movies/${item.thumb_url}`}

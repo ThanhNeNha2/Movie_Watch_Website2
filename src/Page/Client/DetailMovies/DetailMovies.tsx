@@ -33,7 +33,18 @@ interface Movie {
   year?: number;
   category?: Category[];
   country?: Country[];
-  vote_average?: number;
+  tmdb?: {
+    type: string;
+    id: string;
+    season?: number;
+    vote_average: number;
+    vote_count: number;
+  };
+  imdb?: {
+    id: string;
+    vote_average: number;
+    vote_count: number;
+  };
   poster_url?: string;
   thumb_url?: string;
   sub_docquyen?: boolean;
@@ -46,7 +57,7 @@ interface Movie {
   lang?: string;
 }
 
-// Interface for new movies API response (assuming different structure)
+// Interface for new movies API response
 interface NewMovie {
   _id?: string;
   name: string;
@@ -54,10 +65,16 @@ interface NewMovie {
   content?: string;
   year?: number;
   category?: Category[];
-  vote_average?: number;
+  tmdb?: {
+    vote_average: number;
+  };
+  imdb?: {
+    vote_average: number;
+  };
   poster_url?: string;
   thumb_url?: string;
   time?: string;
+  sub_docquyen?: boolean;
 }
 
 // API response structure for single movie
@@ -163,7 +180,8 @@ const DetailMovies: React.FC = () => {
   const movieYear = movie.year || "N/A";
   const movieDescription = movie.content || "Chưa có mô tả cho phim này.";
   const movieCategories = movie.category || [];
-  const movieVoteAverage = movie.vote_average || 0;
+  const movieVoteAverage =
+    movie.tmdb?.vote_average || movie.imdb?.vote_average || 0;
   const moviePosterUrl = resolveImageUrl(movie.poster_url || movie.thumb_url);
   const movieSubDocquyen = movie.sub_docquyen || false;
   const movieTime = movie.time || movie.episode_total || "N/A";
@@ -390,7 +408,7 @@ const DetailMovies: React.FC = () => {
                             {item.origin_name && (
                               <div className="text-gray-400">
                                 <span className="text-green-400 font-medium">
-                                  stipulates
+                                  Tên gốc:
                                 </span>{" "}
                                 {item.origin_name}
                               </div>

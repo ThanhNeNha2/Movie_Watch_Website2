@@ -26,7 +26,7 @@ const Header = ({ isScrolled }: any) => {
 
   return (
     <div
-      className={`h-[60px] px-12 flex justify-between text-white sticky top-0 transition-all duration-1000 z-[99] ${
+      className={`h-[60px] px-12 flex justify-between text-white sticky top-0 transition-all duration-1000 z-[9999] ${
         location.pathname === "/"
           ? isScrolled
             ? "bg-black"

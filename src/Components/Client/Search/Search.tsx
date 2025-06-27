@@ -172,6 +172,42 @@ const Search: React.FC = () => {
                   </select>
                 </div>
 
+                {/* Movie Type Filter */}
+                <div className="space-y-2">
+                  <label
+                    htmlFor="filterType"
+                    className="text-xs font-semibold text-gray-300 block uppercase tracking-wide"
+                  >
+                    Loại phim
+                  </label>
+                  <select
+                    id="filterType"
+                    name="filterType"
+                    value={filters.filterType}
+                    onChange={handleFilterChange}
+                    className="w-full px-3 py-2 bg-gray-700/90 text-white rounded-lg border border-gray-600/50 
+                             focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 transition-all duration-200
+                             hover:bg-gray-700 hover:border-gray-500 cursor-pointer backdrop-blur-sm
+                             shadow-md hover:shadow-lg font-medium text-sm"
+                  >
+                    <option value="">- Tất cả -</option>
+                    <option value="phim-le">Phim Lẻ</option>
+                    <option value="phim-moi">Phim Mới</option>
+                    <option value="phim-bo">Phim Bộ</option>
+                    <option value="tv-shows">TV Shows</option>
+                    <option value="hoat-hinh">Hoạt Hình</option>
+                    <option value="phim-vietsub">Phim Vietsub</option>
+                    <option value="phim-thuyet-minh">Phim Thuyết Minh</option>
+                    <option value="phim-long-tieng">Phim Lồng Tiếng</option>
+                    <option value="phim-bo-dang-chieu">
+                      Phim Bộ Đang Chiếu
+                    </option>
+                    <option value="phim-tron-bo">Phim Trọn Bộ</option>
+                    <option value="phim-sap-chieu">Phim Sắp Chiếu</option>
+                    <option value="subteam">Subteam</option>
+                  </select>
+                </div>
+
                 {/* Category Filter */}
                 <div className="space-y-2">
                   <label
@@ -300,42 +336,6 @@ const Search: React.FC = () => {
                       )
                     )}
                     <option value="before-2000">Trước 2000</option>
-                  </select>
-                </div>
-
-                {/* Movie Type Filter */}
-                <div className="space-y-2">
-                  <label
-                    htmlFor="filterType"
-                    className="text-xs font-semibold text-gray-300 block uppercase tracking-wide"
-                  >
-                    Loại phim
-                  </label>
-                  <select
-                    id="filterType"
-                    name="filterType"
-                    value={filters.filterType}
-                    onChange={handleFilterChange}
-                    className="w-full px-3 py-2 bg-gray-700/90 text-white rounded-lg border border-gray-600/50 
-                             focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 transition-all duration-200
-                             hover:bg-gray-700 hover:border-gray-500 cursor-pointer backdrop-blur-sm
-                             shadow-md hover:shadow-lg font-medium text-sm"
-                  >
-                    <option value="">- Tất cả -</option>
-                    <option value="phim-le">Phim Lẻ</option>
-                    <option value="phim-moi">Phim Mới</option>
-                    <option value="phim-bo">Phim Bộ</option>
-                    <option value="tv-shows">TV Shows</option>
-                    <option value="hoat-hinh">Hoạt Hình</option>
-                    <option value="phim-vietsub">Phim Vietsub</option>
-                    <option value="phim-thuyet-minh">Phim Thuyết Minh</option>
-                    <option value="phim-long-tieng">Phim Lồng Tiếng</option>
-                    <option value="phim-bo-dang-chieu">
-                      Phim Bộ Đang Chiếu
-                    </option>
-                    <option value="phim-tron-bo">Phim Trọn Bộ</option>
-                    <option value="phim-sap-chieu">Phim Sắp Chiếu</option>
-                    <option value="subteam">Subteam</option>
                   </select>
                 </div>
               </div>
