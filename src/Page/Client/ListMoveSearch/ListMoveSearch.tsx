@@ -88,16 +88,19 @@ const ListMoveSearch = () => {
     }[filters.type] || "Danh Sách Phim";
 
   const fetchMovies = async (): Promise<ApiResponse> => {
-    const response = await axios.get("http://localhost:8080/api/list-movie", {
-      params: {
-        page: filters.page,
-        sort_field: filters.sortField,
-        category: filters.category,
-        country: filters.country,
-        year: filters.year,
-        type: filters.type,
-      },
-    });
+    const response = await axios.get(
+      "https://movie-watch-website-be-host.onrender.com/api/list-movie",
+      {
+        params: {
+          page: filters.page,
+          sort_field: filters.sortField,
+          category: filters.category,
+          country: filters.country,
+          year: filters.year,
+          type: filters.type,
+        },
+      }
+    );
     return response.data;
   };
 

@@ -111,7 +111,7 @@ const DetailMovies: React.FC = () => {
   // Fetch movie data from API
   const fetchMovie = async (): Promise<Movie> => {
     const response = await axios.get<ApiResponse>(
-      `http://localhost:8080/api/movie/${movieName}`
+      `https://movie-watch-website-be-host.onrender.com/api/movie/${movieName}`
     );
     console.log("Movie API Response:", response.data); // Log for debugging
     return response.data.pageProps.data.item;

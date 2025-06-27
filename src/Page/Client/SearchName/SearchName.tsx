@@ -83,12 +83,15 @@ const SearchName = () => {
     : "Kết quả tìm kiếm";
 
   const fetchMovies = async (): Promise<ApiResponse> => {
-    const response = await axios.get("http://localhost:8080/api/search-movie", {
-      params: {
-        keyword: keyword,
-        page: filters.page,
-      },
-    });
+    const response = await axios.get(
+      "https://movie-watch-website-be-host.onrender.com/api/search-movie",
+      {
+        params: {
+          keyword: keyword,
+          page: filters.page,
+        },
+      }
+    );
     return response.data;
   };
 

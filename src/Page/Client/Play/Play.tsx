@@ -120,7 +120,7 @@ const Play: React.FC = () => {
   const fetchMovie = async (): Promise<Movie> => {
     if (!movieName) throw new Error("Movie name is required");
     const response = await axios.get<ApiResponse>(
-      `http://localhost:8080/api/movie/${movieName}`
+      `https://movie-watch-website-be-host.onrender.com/api/movie/${movieName}`
     );
     console.log("Movie API Response:", response.data);
     return response.data.pageProps.data.item;
